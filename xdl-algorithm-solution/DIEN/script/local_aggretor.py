@@ -37,7 +37,7 @@ for line in fin:
         fo = ftrain
     else:
         fo = ftest
-    if user != last_user:
+    if user != last_user: #重新开始聚合
         movie_id_list = []
         cate1_list = []
         #print >> fo, items[1] + "\t" + user + "\t" + movie_id + "\t" + cat1 +"\t" + "" + "\t" + "" 
@@ -54,7 +54,7 @@ for line in fin:
         if history_clk_num >= 1:    # 8 is the average length of user behavior
             print >> fo, items[1] + "\t" + user + "\t" + movie_id + "\t" + cat1 +"\t" + mid_str + "\t" + cat_str
     last_user = user
-    if clk:
+    if clk: #只算正样本的
         movie_id_list.append(movie_id)
         cate1_list.append(cat1)                
     line_idx += 1
