@@ -33,14 +33,14 @@ for line in fin:
     dt = items[5]
     cat1 = items[6]
 
-    if ds=="20180118":
+    if ds == "20180118":
         fo = ftrain
     else:
         fo = ftest
-    if user != last_user: #重新开始聚合
+    if user != last_user:  # 重新开始聚合
         movie_id_list = []
         cate1_list = []
-        #print >> fo, items[1] + "\t" + user + "\t" + movie_id + "\t" + cat1 +"\t" + "" + "\t" + "" 
+        # print >> fo, items[1] + "\t" + user + "\t" + movie_id + "\t" + cat1 +"\t" + "" + "\t" + ""
     else:
         history_clk_num = len(movie_id_list)
         cat_str = ""
@@ -51,10 +51,10 @@ for line in fin:
             mid_str += mid + ""
         if len(cat_str) > 0: cat_str = cat_str[:-1]
         if len(mid_str) > 0: mid_str = mid_str[:-1]
-        if history_clk_num >= 1:    # 8 is the average length of user behavior
-            print >> fo, items[1] + "\t" + user + "\t" + movie_id + "\t" + cat1 +"\t" + mid_str + "\t" + cat_str
+        if history_clk_num >= 1:  # 8 is the average length of user behavior
+            print >> fo, items[1] + "\t" + user + "\t" + movie_id + "\t" + cat1 + "\t" + mid_str + "\t" + cat_str
     last_user = user
-    if clk: #只算正样本的
+    if clk:  # 只算正样本的
         movie_id_list.append(movie_id)
-        cate1_list.append(cat1)                
+        cate1_list.append(cat1)
     line_idx += 1
