@@ -37,7 +37,7 @@ for line in fin:
         fo = ftrain
     else:
         fo = ftest
-    if user != last_user:  # 重新开始聚合
+    if user != last_user:  # 新的userID，重新开始聚合
         movie_id_list = []
         cate1_list = []
         # print >> fo, items[1] + "\t" + user + "\t" + movie_id + "\t" + cat1 +"\t" + "" + "\t" + ""

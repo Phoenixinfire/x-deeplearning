@@ -17,13 +17,15 @@ import sys
 import random
 import time
 
+
 def process_meta():
     fi = open("meta_Electronics.json", "r")
     fo = open("item-info", "w")
     for line in fi:
         obj = eval(line)
         cat = obj["categories"][0][-1]
-        print>>fo, obj["asin"] + "\t" + cat
+        print >> fo, obj["asin"] + "\t" + cat
+
 
 def process_reviews():
     fi = open("reviews_Electronics_5.json", "r")
@@ -35,7 +37,8 @@ def process_reviews():
         itemID = obj["asin"]
         rating = obj["overall"]
         time = obj["unixReviewTime"]
-        print>>fo, userID + "\t" + itemID + "\t" + str(rating) + "\t" + str(time)
+        print >> fo, userID + "\t" + itemID + "\t" + str(rating) + "\t" + str(time)
+
 
 def manual_join():
     f_rev = open("reviews-info", "r")
@@ -47,7 +50,7 @@ def manual_join():
         loctime = time.localtime(float(items[-1]))
         items[-1] = time.strftime('%Y-%m-%d', loctime)
         if items[0] not in user_map:
-            user_map[items[0]]= []
+            user_map[items[0]] = []
         user_map[items[0]].append("\t".join(items))
         item_list.append(items[1])
     f_meta = open("item-info", "r")
@@ -58,7 +61,7 @@ def manual_join():
             meta_map[arr[0]] = arr[1]
             arr = line.strip().split("\t")
     fo = open("jointed-new", "w")
-    for key in user_map:
+    for key in user_map:  # 前面的代码已经聚合每个用户的内容
         for line in user_map[key]:
             items = line.split("\t")
             asin = items[1]
@@ -67,16 +70,16 @@ def manual_join():
                 asin_neg_index = random.randint(0, len(item_list) - 1)
                 asin_neg = item_list[asin_neg_index]
                 if asin_neg == asin:
-                    continue 
+                    continue
                 items[1] = asin_neg
-                print>>fo, "0" + "\t" + "\t".join(items) + "\t" + meta_map[asin_neg]
+                print >> fo, "0" + "\t" + "\t".join(items) + "\t" + meta_map[asin_neg]
                 j += 1
-                if j == 1:             #negative sampling frequency
+                if j == 1:  # negative sampling frequency
                     break
             if asin in meta_map:
-                print>>fo, "1" + "\t" + line + "\t" + meta_map[asin]
+                print >> fo, "1" + "\t" + line + "\t" + meta_map[asin]
             else:
-                print>>fo, "1" + "\t" + line + "\t" + "default_cat"
+                print >> fo, "1" + "\t" + line + "\t" + "default_cat"
 
 
 def split_test():
@@ -96,18 +99,19 @@ def split_test():
         line = line.strip()
         user = line.split("\t")[1]
         if user == last_user:
-            if i < user_count[user] - 2:  # 1 + negative samples
-                print>> fo, "20180118" + "\t" + line
+            if i < user_count[user] - 2:  # 1 + negative samples 最后一行标记为20190119
+                print >> fo, "20180118" + "\t" + line
             else:
-                print>>fo, "20190119" + "\t" + line
+                print >> fo, "20190119" + "\t" + line
         else:
             last_user = user
             i = 0
             if i < user_count[user] - 2:
-                print>> fo, "20180118" + "\t" + line
+                print >> fo, "20180118" + "\t" + line
             else:
-                print>>fo, "20190119" + "\t" + line
+                print >> fo, "20190119" + "\t" + line
         i += 1
+
 
 process_meta()
 process_reviews()
