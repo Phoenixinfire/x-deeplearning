@@ -112,7 +112,7 @@ def test(train_file=train_file,
             EMBEDDING_DIM, HIDDEN_SIZE, ATTENTION_SIZE)
     else:
         raise Exception('only support din and dien model')
-    
+
     @xdl.tf_wrapper(is_training=False)
     def tf_test_model(*inputs):
         with tf.variable_scope("tf_model", reuse=tf.AUTO_REUSE):
