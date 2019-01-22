@@ -111,7 +111,7 @@ def test(train_file=train_file,
             EMBEDDING_DIM, HIDDEN_SIZE, ATTENTION_SIZE)
     else:
         raise Exception('only support din and dien model')
-    
+
     @xdl.tf_wrapper(is_training=False)
     def tf_test_model(*inputs):
         with tf.variable_scope("tf_model", reuse=tf.AUTO_REUSE):
@@ -129,30 +129,15 @@ def test(train_file=train_file,
     # test
     datas = sample_io.next_test()
     test_ops = tf_test_model(
-<<<<<<< HEAD
         *model.xdl_embedding(datas, EMBEDDING_DIM, *sample_io.get_n()))
 
     saver = xdl.Saver()
-    #checkpoint_version ="./ckpt_dir/ckpt-................8700/" # ckpt_version
-    saver.restore(version = "ckpt-................8700") #version=
-
-=======
-        *model.xdl_embedding(datas, EMBEDDING_DIM, *sample_io.get_n()))  # test_ops中包含有y_hat
-
-    saver = xdl.Saver()
-    saver.restore(version="ckpt-................8700")
->>>>>>> c74dc8f9c538248f735e591c076b1fb3b84deb58
+    # checkpoint_version ="./ckpt_dir/ckpt-................8700/" # ckpt_version
+    saver.restore(version="ckpt-................8700")  # version=
     eval_sess = xdl.TrainSession()
 
-    #print('test_auc: %.4f ----test_loss: %.4f ---- test_accuracy: %.4f ---- test_aux_loss: %.4f' %
-    #      eval_model(eval_sess, test_ops))
-
-    stored_arr=predict(eval_sess,test_ops)
-    cnt=0
-    for r in stored_arr:
-        cnt+=1
-        if cnt<20:
-            print(r[0],r[1],r[2])
+    print('test_auc: %.4f ----test_loss: %.4f ---- test_accuracy: %.4f ---- test_aux_loss: %.4f' %
+          eval_model(eval_sess, test_ops))
 
 
 def predict(train_file=train_file,
