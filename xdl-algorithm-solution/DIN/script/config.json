@@ -3,8 +3,8 @@
     "output_dir": "./ckpt_dir/",
     "save_interval": 20000
   },
-  "data_dir": "../data/",
+  "data_dir": "../../DIEN/data/",
   "seed": 3,
-  "job_type": "train",
+  "job_type": "test",
   "model": "din"
 }

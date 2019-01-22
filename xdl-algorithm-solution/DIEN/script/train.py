@@ -28,6 +28,7 @@ from sample_io import SampleIO
 
 import xdl
 from xdl.python.training.train_session import QpsMetricsHook, MetricsPrinterHook
+import numpy as np
 
 EMBEDDING_DIM = 18
 HIDDEN_SIZE = 18 * 2
@@ -75,6 +76,7 @@ def train(train_file=train_file,
         hooks = []
         log_format = "[%(time)s] lstep[%(lstep)s] gstep[%(gstep)s] lqps[%(lqps)s] gqps[%(gqps)s] loss[%(loss)s]"
         hooks = [QpsMetricsHook(), MetricsPrinterHook(log_format)]
+	print("get_task_index",xdl.get_task_index())
         if xdl.get_task_index() == 0:
             hooks.append(xdl.CheckpointHook(xdl.get_config('checkpoint', 'save_interval')))
         train_sess = xdl.TrainSession(hooks=hooks)
@@ -95,7 +97,7 @@ def test(train_file=train_file,
          maxlen=100):
    # sample_io
     sample_io = SampleIO(train_file, test_file, uid_voc, mid_voc,
-                         cat_voc, batch_size, maxlen, EMBEDDING_DIM)
+                         cat_voc, item_info, reviews_info, batch_size, maxlen, EMBEDDING_DIM)
 
     if xdl.get_config('model') == 'din':    
         model = Model_DIN(
@@ -105,14 +107,34 @@ def test(train_file=train_file,
             EMBEDDING_DIM, HIDDEN_SIZE, ATTENTION_SIZE)
     else:
         raise Exception('only support din and dien model')
+    
+    @xdl.tf_wrapper(is_training=False)
+    def tf_test_model(*inputs):
+        with tf.variable_scope("tf_model", reuse=tf.AUTO_REUSE):
+            model.build_tf_net(inputs, False)
+        test_ops = model.test_ops()
+        return test_ops[0], test_ops[1:]
 
     # test
     datas = sample_io.next_test()
     test_ops = tf_test_model(
         *model.xdl_embedding(datas, EMBEDDING_DIM, *sample_io.get_n()))
+
+    saver = xdl.Saver()
+    #checkpoint_version ="./ckpt_dir/ckpt-................8700/" # ckpt_version
+    saver.restore(version = "ckpt-................8700") #version=
+
     eval_sess = xdl.TrainSession()
-    print('test_auc: %.4f ----test_loss: %.4f ---- test_accuracy: %.4f ---- test_aux_loss: %.4f' %
-          eval_model(eval_sess, test_ops))
+
+    #print('test_auc: %.4f ----test_loss: %.4f ---- test_accuracy: %.4f ---- test_aux_loss: %.4f' %
+    #      eval_model(eval_sess, test_ops))
+
+    stored_arr=predict(eval_sess,test_ops)
+    cnt=0
+    for r in stored_arr:
+        cnt+=1
+        if cnt<20:
+            print(r[0],r[1],r[2])
 
 if __name__ == '__main__':
     SEED = xdl.get_config("seed")

@@ -28,6 +28,7 @@ import math
 import numpy
 import datetime
 from xdl.python.utils.metrics import add_metrics
+import numpy as np
 
 best_auc = 0.0
 
@@ -60,6 +61,26 @@ def eval_model(sess, test_ops):
     if best_auc < test_auc:
         best_auc = test_auc
     return test_auc, loss_sum, accuracy_sum, aux_loss_sum
+
+def predict(sess, test_ops):
+    nums = 0
+    stored_arr = []
+    while not sess.should_stop():
+        nums += 1
+        values = sess.run(test_ops)
+        if values is None:
+            break
+        prob, loss, acc, aux_loss, target = values
+        prob_1 = prob[:, 0].tolist()
+
+        prob_0 = prob[:, 1].tolist()
+	numpy_prob_1=np.array(prob_1)
+        target_1 = target[:, 0].tolist()
+        for p0,p1,t in zip(prob_0,prob_1, target_1):
+            stored_arr.append([p0,p1,t])
+    sess._finish = False
+    return stored_arr
+
 
 class DataTensors(object):
     def __init__(self, datas, embedding_dim):
