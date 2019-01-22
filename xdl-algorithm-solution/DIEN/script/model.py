@@ -71,13 +71,13 @@ def predict(sess, test_ops):
         values = sess.run(test_ops)
         if values is None:
             break
-        prob, loss, acc, aux_loss, target = values
+        prob, uid = values
         prob_1 = prob[:, 0].tolist()
 
         prob_0 = prob[:, 1].tolist()
         numpy_prob_1 = np.array(prob_1)
-        target_1 = target[:, 0].tolist()
-        for p0, p1, t in zip(prob_0, prob_1, target_1):
+        uid_1 = uid[:, 0].tolist()
+        for p0, p1, t in zip(prob_0, prob_1, uid_1):
             stored_arr.append([p0, p1, t])
     sess._finish = False
     return stored_arr
@@ -224,6 +224,10 @@ class Model(object):
 
     def test_ops(self):
         return [self.y_hat, self.loss, self.accuracy, self.aux_loss, self.tensors.target]
+
+    # 用于预测
+    def predict_ops(self):
+        return [self.y_hat, self.tensors.uid]
 
     def run_test(self, test_ops, test_sess):
         if xdl.get_task_index() == 0 and test_ops is not None and test_sess is not None:

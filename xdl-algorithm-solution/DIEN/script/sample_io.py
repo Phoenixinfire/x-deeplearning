@@ -18,6 +18,7 @@ import numpy as np
 from data_iterator import DataIterator
 from xdl.python.lib.error import OutOfRange
 
+
 class SampleIO(object):
     def __init__(self,
                  train_file="local_train_splitByUser",
@@ -35,10 +36,11 @@ class SampleIO(object):
         self.embedding_dim = embedding_dim
         self.return_neg = return_neg
         self.train_data = DataIterator(
-            train_file, uid_voc, mid_voc, cat_voc, item_info, reviews_info, batch_size, maxlen, shuffle_each_epoch=False)
+            train_file, uid_voc, mid_voc, cat_voc, item_info, reviews_info, batch_size, maxlen,
+            shuffle_each_epoch=False)
         self.test_data = DataIterator(
             test_file, uid_voc, mid_voc, cat_voc, item_info, reviews_info, batch_size, maxlen)
-        self.n_uid, self.n_mid, self.n_cat = self.train_data.get_n()
+        self.n_uid, self.n_mid, self.n_cat = self.train_data.get_n()  # 训练集和测试集是一致的
 
     def get_n(self):
         return self.n_uid, self.n_mid, self.n_cat
@@ -81,11 +83,12 @@ class SampleIO(object):
         sparse_tensors = []
         for i in range(sparse_cnt):
             sparse_tensors.append(xdl.SparseTensor(
-                    datas[3 * i], datas[3 * i + 1], datas[3 * i + 2]))
+                datas[3 * i], datas[3 * i + 1], datas[3 * i + 2]))
         return sparse_tensors + datas[sparse_cnt * 3:]
 
     def prepare_data(self, input, target, maxlen=None, return_neg=False):
         # x: a list of sentences
+        # [uid, mid, cat, mid_list, cat_list,noclk_mid_list, noclk_cat_list]
         lengths_x = [len(s[4]) for s in input]
         seqs_mid = [inp[3] for inp in input]
         seqs_cat = [inp[4] for inp in input]
@@ -99,7 +102,7 @@ class SampleIO(object):
             new_noclk_seqs_cat = []
             new_lengths_x = []
             for l_x, inp in zip(lengths_x, input):
-                if l_x > maxlen:
+                if l_x > maxlen: #序列的最大长度，超过这个值就只取序列最后的部分
                     new_seqs_mid.append(inp[3][l_x - maxlen:])
                     new_seqs_cat.append(inp[4][l_x - maxlen:])
                     new_noclk_seqs_mid.append(inp[5][l_x - maxlen:])
@@ -120,7 +123,7 @@ class SampleIO(object):
             if len(lengths_x) < 1:
                 return None, None, None, None
 
-        n_samples = len(seqs_mid)
+        n_samples = len(seqs_mid) #样本条数
         maxlen_x = np.max(lengths_x) + 1
         neg_samples = len(noclk_seqs_mid[0][0])
 
@@ -157,25 +160,25 @@ class SampleIO(object):
         for e in [uids, mids, cats]:
             results.append(np.reshape(e, (-1)))
             results.append(id_values)
-            results.append(id_seg)
+            results.append(id_seg) #3*3
         for e in [mid_his, cat_his]:
             results.append(np.reshape(e, (-1)))
             results.append(his_values)
-            results.append(his_seg)
+            results.append(his_seg) #3*2
         if return_neg:
             for e in [noclk_mid_his, noclk_cat_his]:
                 results.append(np.reshape(e, (-1)))
                 results.append(neg_his_values)
-                results.append(neg_his_seg)
+                results.append(neg_his_seg) #3*2
         results.extend(
-            [mid_mask, np.array(target, dtype=np.float32), np.array(lengths_x, dtype=np.int32)])
+            [mid_mask, np.array(target, dtype=np.float32), np.array(lengths_x, dtype=np.int32)]) #3
         # for split
-        results.append(np.array([n_samples, n_samples], dtype=np.int32))
+        results.append(np.array([n_samples, n_samples], dtype=np.int32)) #1
         # shape
         results.extend([np.array([-1, self.embedding_dim], dtype=np.int32),
                         np.array([-1, maxlen_x, self.embedding_dim],
                                  dtype=np.int32),
                         np.array(
                             [-1, maxlen_x, neg_samples, self.embedding_dim], dtype=np.int32),
-                        np.array([-1, maxlen_x], dtype=np.int32)])
+                        np.array([-1, maxlen_x], dtype=np.int32)]) #4
         return results

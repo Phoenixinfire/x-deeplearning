@@ -129,56 +129,52 @@ def test(train_file=train_file,
     print('test_auc: %.4f ----test_loss: %.4f ---- test_accuracy: %.4f ---- test_aux_loss: %.4f' %
           eval_model(eval_sess, test_ops))
 
+
+def predict(train_file=train_file,
+            test_file=test_file,
+            uid_voc=uid_voc,
+            mid_voc=mid_voc,
+            cat_voc=cat_voc,
+            item_info=item_info,
+            reviews_info=reviews_info,
+            batch_size=128,
+            maxlen=100,
+            test_iter=700):
+    # sample_io
+    sample_io = SampleIO(train_file, test_file, uid_voc, mid_voc,
+                         cat_voc, item_info, reviews_info, batch_size, maxlen, EMBEDDING_DIM)
+
+    if xdl.get_config('model') == 'din':
+        model = Model_DIN(
+            EMBEDDING_DIM, HIDDEN_SIZE, ATTENTION_SIZE)
+    elif xdl.get_config('model') == 'dien':
+        model = Model_DIEN(
+            EMBEDDING_DIM, HIDDEN_SIZE, ATTENTION_SIZE)
+    else:
+        raise Exception('only support din and dien model')
+
+    @xdl.tf_wrapper(is_training=False)
+    def tf_test_model(*inputs):
+        with tf.variable_scope("tf_model", reuse=tf.AUTO_REUSE):
+            model.build_tf_net(inputs, False)
+        predict_ops = model.predict_ops()
+        return predict_ops[0], predict_ops[1:]
+
+    # predict
+    datas = sample_io.next_test()
+    test_ops = tf_test_model(
+        *model.xdl_embedding(datas, EMBEDDING_DIM, *sample_io.get_n()))  # test_ops中包含有y_hat
+
+    saver = xdl.Saver()
+    saver.restore(version="ckpt-................8700")
+    eval_sess = xdl.TrainSession()
+
     stored_arr = predict(eval_sess, test_ops)
     cnt = 0
     for r in stored_arr:
         cnt += 1
         if cnt < 10:
             print(r[0], r[1])
-
-# def predict(train_file=train_file,
-#             test_file=test_file,
-#             uid_voc=uid_voc,
-#             mid_voc=mid_voc,
-#             cat_voc=cat_voc,
-#             item_info=item_info,
-#             reviews_info=reviews_info,
-#             batch_size=128,
-#             maxlen=100,
-#             test_iter=700,
-#             ckpt_version):
-#     if xdl.get_config('model') == 'din':
-#         model = Model_DIN(
-#             EMBEDDING_DIM, HIDDEN_SIZE, ATTENTION_SIZE
-#         )
-#     elif xdl.get_config('model') == 'dien':
-#         model = Model_DIEN(
-#             EMBEDDING_DIM, HIDDEN_SIZE, ATTENTION_SIZE)
-#     else:
-#         raise Exception('only support din and dien model')
-#
-#     sample_io = SampleIO(train_file, test_file, uid_voc, mid_voc,
-#                          cat_voc, item_info, reviews_info,
-#                          batch_size, maxlen, EMBEDDING_DIM)
-#
-#     # @xdl.tf_wrapper(is_training=False)
-#     # def tf_test_model(*inputs):
-#     #     with tf.variable_scope("tf_model", reuse=tf.AUTO_REUSE):
-#     #         self.build_tf_net(inputs, is_train)
-#     #     test_ops = self.test_ops()
-#     #     return test_ops[0], test_ops[1:]
-#
-#     saver = xdl.Saver()
-#     checkpoint_version = ckpt_version
-#     saver.restore(version=checkpoint_version)
-#
-#     # test
-#     datas = sample_io.next_test()
-#     test_ops = tf_test_model(
-#         *model.xdl_embedding(datas, EMBEDDING_DIM, *sample_io.get_n()))
-#     eval_sess = xdl.TrainSession()
-#     print('test_auc: %.4f ----test_loss: %.4f ---- test_accuracy: %.4f ---- test_aux_loss: %.4f' %
-#           eval_model(eval_sess, test_ops))
 
 
 if __name__ == '__main__':

@@ -107,7 +107,7 @@ class DataIterator:
 
         self.end_of_data = False
 
-    def get_n(self):
+    def get_n(self):  # 总用户数，总item数，总category数
         return self.n_uid, self.n_mid, self.n_cat
 
     def __iter__(self):
@@ -133,7 +133,8 @@ class DataIterator:
                 ss = self.source.readline()
                 if ss == "":
                     break
-                self.source_buffer.append(ss.strip("\n").split("\t"))
+                self.source_buffer.append(ss.strip("\n").split(
+                    "\t"))  # 0       ALEIRCCL8P1C4   0061284874      Books   00605794120060916575   BooksBooks
 
             # sort by  history behavior length
             if self.sort_by_length:
@@ -163,16 +164,16 @@ class DataIterator:
                     break
 
                 uid = self.source_dicts[0][ss[1]
-                                           ] if ss[1] in self.source_dicts[0] else 0
+                ] if ss[1] in self.source_dicts[0] else 0
                 mid = self.source_dicts[1][ss[2]
-                                           ] if ss[2] in self.source_dicts[1] else 0
+                ] if ss[2] in self.source_dicts[1] else 0
                 cat = self.source_dicts[2][ss[3]
-                                           ] if ss[3] in self.source_dicts[2] else 0
+                ] if ss[3] in self.source_dicts[2] else 0
                 tmp = []
                 for fea in ss[4].split('\x02'):
                     m = self.source_dicts[1][fea] if fea in self.source_dicts[1] else 0
                     tmp.append(m)
-                mid_list = tmp
+                mid_list = tmp #商品item list
 
                 tmp1 = []
                 for fea in ss[5].split('\x02'):
@@ -196,19 +197,19 @@ class DataIterator:
                     while True:
                         noclk_mid_indx = random.randint(
                             0, len(self.mid_list_for_random) - 1)
-                        noclk_mid = self.mid_list_for_random[noclk_mid_indx]
+                        noclk_mid = self.mid_list_for_random[noclk_mid_indx] #用于负采样，选择没有点击的item
                         if noclk_mid == pos_mid:
                             continue
                         noclk_tmp_mid.append(noclk_mid)
                         noclk_tmp_cat.append(self.meta_id_map[noclk_mid])
                         noclk_index += 1
                         if noclk_index >= 5:
-                            break
+                            break #选择五个
                     noclk_mid_list.append(noclk_tmp_mid)
                     noclk_cat_list.append(noclk_tmp_cat)
                 source.append([uid, mid, cat, mid_list, cat_list,
-                               noclk_mid_list, noclk_cat_list])
-                target.append([float(ss[0]), 1 - float(ss[0])])
+                               noclk_mid_list, noclk_cat_list])  # [[样本信息]...]
+                target.append([float(ss[0]), 1 - float(ss[0])])  # [[target信息]...]
 
                 if len(source) >= self.batch_size or len(target) >= self.batch_size:
                     break
