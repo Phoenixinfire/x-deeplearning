@@ -13,6 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 
+#用于模型测试
 import random
 
 fi = open("local_test", "r")

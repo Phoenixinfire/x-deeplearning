@@ -32,6 +32,7 @@ import numpy as np
 
 best_auc = 0.0
 
+
 def eval_model(sess, test_ops):
     loss_sum = 0.
     accuracy_sum = 0.
@@ -62,22 +63,23 @@ def eval_model(sess, test_ops):
         best_auc = test_auc
     return test_auc, loss_sum, accuracy_sum, aux_loss_sum
 
-def predict(sess, test_ops):
+
+def predict(sess, predict_ops):
     nums = 0
     stored_arr = []
     while not sess.should_stop():
         nums += 1
-        values = sess.run(test_ops)
+        values = sess.run(predict_ops)
         if values is None:
             break
-        prob, loss, acc, aux_loss, target = values
+        prob, uid = values
         prob_1 = prob[:, 0].tolist()
 
         prob_0 = prob[:, 1].tolist()
-	numpy_prob_1=np.array(prob_1)
-        target_1 = target[:, 0].tolist()
-        for p0,p1,t in zip(prob_0,prob_1, target_1):
-            stored_arr.append([p0,p1,t])
+        numpy_prob_1 = np.array(prob_1)
+        uid_1 = uid[:, 0].tolist()
+        for p0, p1, t in zip(prob_0, prob_1, uid_1):
+            stored_arr.append([p0, p1, t])
     sess._finish = False
     return stored_arr
 
@@ -105,6 +107,7 @@ class DataTensors(object):
         self.target.set_shape([None, 2])
         self.seq_len = tf.reshape(datas[9], [-1])
         self.seq_len.set_shape([None])
+
 
 class Model(object):
     def __init__(self, EMBEDDING_DIM, HIDDEN_SIZE, ATTENTION_SIZE, use_negsampling=False):
@@ -171,8 +174,8 @@ class Model(object):
         click_loss_ = - tf.reshape(tf.log(click_prop_),
                                    [-1, tf.shape(click_seq)[1]]) * mask
         noclick_loss_ = - \
-            tf.reshape(tf.log(1.0 - noclick_prop_),
-                       [-1, tf.shape(noclick_seq)[1]]) * mask
+                            tf.reshape(tf.log(1.0 - noclick_prop_),
+                                       [-1, tf.shape(noclick_seq)[1]]) * mask
         loss_ = tf.reduce_mean(click_loss_ + noclick_loss_)
         return loss_
 
@@ -223,6 +226,10 @@ class Model(object):
     def test_ops(self):
         return [self.y_hat, self.loss, self.accuracy, self.aux_loss, self.tensors.target]
 
+    # 用于预测
+    def predict_ops(self):
+        return [self.y_hat, self.tensors.uid]
+
     def run_test(self, test_ops, test_sess):
         if xdl.get_task_index() == 0 and test_ops is not None and test_sess is not None:
             print('test_auc: %.4f ---- test_loss: %.4f ---- test_accuracy: %.4f ---- test_aux_loss: %.4f' %
@@ -242,6 +249,7 @@ class Model(object):
                           (step, loss, acc, aux_loss))
             train_sess._finish = False
 
+
 class Model_DIEN(Model):
     def __init__(self, EMBEDDING_DIM, HIDDEN_SIZE, ATTENTION_SIZE, use_negsampling=True):
         super(Model_DIEN, self).__init__(
@@ -254,7 +262,9 @@ class Model_DIEN(Model):
 
         # RNN layer(-s)
         with tf.name_scope('rnn_1'):
-            rnn_outputs, _ = dynamic_rnn(GRUCell(self.hidden_size, kernel_initializer=get_tf_initializer()), inputs=self.item_his_eb, sequence_length=self.tensors.seq_len, dtype=tf.float32, scope="gru1")
+            rnn_outputs, _ = dynamic_rnn(GRUCell(self.hidden_size, kernel_initializer=get_tf_initializer()),
+                                         inputs=self.item_his_eb, sequence_length=self.tensors.seq_len,
+                                         dtype=tf.float32, scope="gru1")
 
         aux_loss_1 = self.auxiliary_loss(rnn_outputs[:, :-1, :], self.item_his_eb[:, 1:, :],
                                          self.noclk_item_his_eb[:, 1:, :],
@@ -267,11 +277,12 @@ class Model_DIEN(Model):
                                                     softmax_stag=1, stag='1_1', mode='LIST', return_alphas=True)
 
         with tf.name_scope('rnn_2'):
-            rnn_outputs2, final_state2 = dynamic_rnn(VecAttGRUCell(self.hidden_size, kernel_initializer=get_tf_initializer()), inputs=rnn_outputs,
-                                                     att_scores=tf.expand_dims(
-                                                         alphas, -1),
-                                                     sequence_length=self.tensors.seq_len, dtype=tf.float32,
-                                                     scope="gru2")
+            rnn_outputs2, final_state2 = dynamic_rnn(
+                VecAttGRUCell(self.hidden_size, kernel_initializer=get_tf_initializer()), inputs=rnn_outputs,
+                att_scores=tf.expand_dims(
+                    alphas, -1),
+                sequence_length=self.tensors.seq_len, dtype=tf.float32,
+                scope="gru2")
 
         inp = tf.concat([self.tensors.uid, self.item_eb,
                          final_state2, self.item_his_eb_sum], 1)
@@ -306,6 +317,7 @@ class Model_DIEN(Model):
                 self.build_tf_net(inputs, is_train)
             test_ops = self.test_ops()
             return test_ops[0], test_ops[1:]
+
         if is_train:
             datas = sample_io.next_train()
             train_ops = tf_train_model(
@@ -382,6 +394,7 @@ class Model_DIN(Model):
                 self.build_tf_net(inputs, is_train)
             test_ops = self.test_ops()
             return test_ops[0], test_ops[1:]
+
         if is_train:
             datas = sample_io.next_train()
             train_ops = tf_train_model(
@@ -409,4 +422,3 @@ class Model_DIN(Model):
                 if (iter % test_iter) == 0:
                     self.run_test(test_ops, test_sess)
             train_sess._finish = False
-

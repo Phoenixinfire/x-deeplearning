@@ -44,16 +44,16 @@ for line in f_train:
         if m not in mid_dict:
             mid_dict[m] = 0
         mid_dict[m] += 1
-    #print iddd
-    iddd+=1
+    # print iddd
+    iddd += 1
     for c in cat_list.split(""):
         if c not in cat_dict:
             cat_dict[c] = 0
         cat_dict[c] += 1
 
-sorted_uid_dict = sorted(uid_dict.iteritems(), key=lambda x:x[1], reverse=True)
-sorted_mid_dict = sorted(mid_dict.iteritems(), key=lambda x:x[1], reverse=True)
-sorted_cat_dict = sorted(cat_dict.iteritems(), key=lambda x:x[1], reverse=True)
+sorted_uid_dict = sorted(uid_dict.iteritems(), key=lambda x: x[1], reverse=True)
+sorted_mid_dict = sorted(mid_dict.iteritems(), key=lambda x: x[1], reverse=True)
+sorted_cat_dict = sorted(cat_dict.iteritems(), key=lambda x: x[1], reverse=True)
 
 uid_voc = {}
 index = 0
