@@ -63,8 +63,7 @@ def eval_model(sess, test_ops):
         best_auc = test_auc
     return test_auc, loss_sum, accuracy_sum, aux_loss_sum
 
-
-def predict(sess, predict_ops):
+def predict(sess, test_ops):
     nums = 0
     stored_arr = []
     while not sess.should_stop():
@@ -80,6 +79,17 @@ def predict(sess, predict_ops):
         uid_1 = uid[:, 0].tolist()
         for p0, p1, t in zip(prob_0, prob_1, uid_1):
             stored_arr.append([p0, p1, t])
+        values = sess.run(test_ops)
+        if values is None:
+            break
+        prob, loss, acc, aux_loss, target = values
+        prob_1 = prob[:, 0].tolist()
+
+        prob_0 = prob[:, 1].tolist()
+	    numpy_prob_1=np.array(prob_1)
+        target_1 = target[:, 0].tolist()
+        for p0,p1,t in zip(prob_0,prob_1, target_1):
+            stored_arr.append([p0,p1,t])
     sess._finish = False
     return stored_arr
 

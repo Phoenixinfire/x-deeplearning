@@ -79,6 +79,7 @@ def train(train_file=train_file,
         hooks = []
         log_format = "[%(time)s] lstep[%(lstep)s] gstep[%(gstep)s] lqps[%(lqps)s] gqps[%(gqps)s] loss[%(loss)s]"
         hooks = [QpsMetricsHook(), MetricsPrinterHook(log_format)]
+
         if xdl.get_task_index() == 0:  # 判断是否是local模式
             hooks.append(xdl.CheckpointHook(xdl.get_config('checkpoint', 'save_interval')))
         train_sess = xdl.TrainSession(hooks=hooks)
@@ -111,6 +112,13 @@ def test(train_file=train_file,
             EMBEDDING_DIM, HIDDEN_SIZE, ATTENTION_SIZE)
     else:
         raise Exception('only support din and dien model')
+    
+    @xdl.tf_wrapper(is_training=False)
+    def tf_test_model(*inputs):
+        with tf.variable_scope("tf_model", reuse=tf.AUTO_REUSE):
+            model.build_tf_net(inputs, False)
+        test_ops = model.test_ops()
+        return test_ops[0], test_ops[1:]
 
     @xdl.tf_wrapper(is_training=False)
     def tf_test_model(*inputs):
