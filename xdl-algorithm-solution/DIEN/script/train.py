@@ -163,7 +163,7 @@ def predict(train_file=train_file,
     # predict
     datas = sample_io.next_test()
     test_ops = tf_test_model(
-        *model.xdl_embedding(datas, EMBEDDING_DIM, *sample_io.get_n()))  # test_ops中包含有y_hat
+        *model.xdl_embedding(datas, EMBEDDING_DIM, *sample_io.get_n()))  # predict_ops中包含有uuid
 
     saver = xdl.Saver()
     saver.restore(version="ckpt-................8700")

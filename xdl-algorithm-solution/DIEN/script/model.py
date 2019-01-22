@@ -63,12 +63,12 @@ def eval_model(sess, test_ops):
     return test_auc, loss_sum, accuracy_sum, aux_loss_sum
 
 
-def predict(sess, test_ops):
+def predict(sess, predict_ops):
     nums = 0
     stored_arr = []
     while not sess.should_stop():
         nums += 1
-        values = sess.run(test_ops)
+        values = sess.run(predict_ops)
         if values is None:
             break
         prob, uid = values
