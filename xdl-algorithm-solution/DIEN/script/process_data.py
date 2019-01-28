@@ -1,3 +1,5 @@
+#coding=utf-8
+
 # Copyright (C) 2016-2018 Alibaba Group Holding Limited
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,6 +19,7 @@ import sys
 import random
 import time
 
+dir=sys.argv[1]
 
 def process_meta():
     fi = open("meta_Electronics.json", "r")
@@ -40,8 +43,8 @@ def process_reviews():
         print >> fo, userID + "\t" + itemID + "\t" + str(rating) + "\t" + str(time)
 
 
-def manual_join():
-    f_rev = open("reviews-info", "r")
+def manual_join(dir):
+    f_rev = open("%sreviews-info"%(dir), "r")
     user_map = {}
     item_list = []
     for line in f_rev:
@@ -53,14 +56,14 @@ def manual_join():
             user_map[items[0]] = []
         user_map[items[0]].append("\t".join(items))
         item_list.append(items[1])
-    f_meta = open("item-info", "r")
+    f_meta = open("%sitem-info"%(dir), "r")
     meta_map = {}
     for line in f_meta:
         arr = line.strip().split("\t")
         if arr[0] not in meta_map:
             meta_map[arr[0]] = arr[1]
             arr = line.strip().split("\t")
-    fo = open("jointed-new", "w")
+    fo = open("%sjointed-new"%(dir), "w")
     for key in user_map:  # 前面的代码已经聚合每个用户的内容
         for line in user_map[key]:
             items = line.split("\t")
@@ -83,8 +86,8 @@ def manual_join():
 
 
 def split_test():
-    fi = open("jointed-new", "r")
-    fo = open("jointed-new-split-info", "w")
+    fi = open("%sjointed-new"%(dir), "r")
+    fo = open("%sjointed-new-split-info"%(dir), "w")
     user_count = {}
     for line in fi:
         line = line.strip()
@@ -113,7 +116,7 @@ def split_test():
         i += 1
 
 
-process_meta()
-process_reviews()
-manual_join()
-split_test()
+#process_meta()
+#process_reviews()
+manual_join(dir)
+split_test(dir)
