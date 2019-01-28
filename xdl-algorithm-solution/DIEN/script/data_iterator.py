@@ -72,11 +72,11 @@ class DataIterator:
         self.meta_id_map = {}
         for key in meta_map:
             val = meta_map[key]
-            if key in self.source_dicts[1]:
+            if key in self.source_dicts[1]:  # mid
                 mid_idx = self.source_dicts[1][key]
             else:
                 mid_idx = 0
-            if val in self.source_dicts[2]:
+            if val in self.source_dicts[2]:  # cat
                 cat_idx = self.source_dicts[2][val]
             else:
                 cat_idx = 0
@@ -87,7 +87,7 @@ class DataIterator:
         for line in f_review:
             arr = line.strip().split("\t")
             tmp_idx = 0
-            if arr[1] in self.source_dicts[1]:
+            if arr[1] in self.source_dicts[1]:  # mid,item
                 tmp_idx = self.source_dicts[1][arr[1]]
             self.mid_list_for_random.append(tmp_idx)
 
@@ -173,7 +173,7 @@ class DataIterator:
                 for fea in ss[4].split('\x02'):
                     m = self.source_dicts[1][fea] if fea in self.source_dicts[1] else 0
                     tmp.append(m)
-                mid_list = tmp #商品item list
+                mid_list = tmp  # 商品item list
 
                 tmp1 = []
                 for fea in ss[5].split('\x02'):
@@ -197,14 +197,14 @@ class DataIterator:
                     while True:
                         noclk_mid_indx = random.randint(
                             0, len(self.mid_list_for_random) - 1)
-                        noclk_mid = self.mid_list_for_random[noclk_mid_indx] #用于负采样，选择没有点击的item
+                        noclk_mid = self.mid_list_for_random[noclk_mid_indx]  # 用于负采样，选择没有点击的item
                         if noclk_mid == pos_mid:
                             continue
                         noclk_tmp_mid.append(noclk_mid)
                         noclk_tmp_cat.append(self.meta_id_map[noclk_mid])
                         noclk_index += 1
                         if noclk_index >= 5:
-                            break #选择五个
+                            break  # 选择五个
                     noclk_mid_list.append(noclk_tmp_mid)
                     noclk_cat_list.append(noclk_tmp_cat)
                 source.append([uid, mid, cat, mid_list, cat_list,

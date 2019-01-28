@@ -102,7 +102,7 @@ class SampleIO(object):
             new_noclk_seqs_cat = []
             new_lengths_x = []
             for l_x, inp in zip(lengths_x, input):
-                if l_x > maxlen: #序列的最大长度，超过这个值就只取序列最后的部分
+                if l_x > maxlen:  # 序列的最大长度，超过这个值就只取序列最后的部分
                     new_seqs_mid.append(inp[3][l_x - maxlen:])
                     new_seqs_cat.append(inp[4][l_x - maxlen:])
                     new_noclk_seqs_mid.append(inp[5][l_x - maxlen:])
@@ -114,7 +114,7 @@ class SampleIO(object):
                     new_noclk_seqs_mid.append(inp[5])
                     new_noclk_seqs_cat.append(inp[6])
                     new_lengths_x.append(l_x)
-            lengths_x = new_lengths_x
+            lengths_x = new_lengths_x  # 点击历史长度
             seqs_mid = new_seqs_mid
             seqs_cat = new_seqs_cat
             noclk_seqs_mid = new_noclk_seqs_mid
@@ -123,8 +123,8 @@ class SampleIO(object):
             if len(lengths_x) < 1:
                 return None, None, None, None
 
-        n_samples = len(seqs_mid) #样本条数
-        maxlen_x = np.max(lengths_x) + 1
+        n_samples = len(seqs_mid)  # 样本条数
+        maxlen_x = np.max(lengths_x) + 1  # 每个用户访问历史记录有长有短，去最长的那一个,后续填充矩阵按后对齐
         neg_samples = len(noclk_seqs_mid[0][0])
 
         mid_his = np.zeros((n_samples, maxlen_x)).astype('int64')
@@ -136,7 +136,7 @@ class SampleIO(object):
         mid_mask = np.zeros((n_samples, maxlen_x)).astype('float32')
         for idx, [s_x, s_y, no_sx, no_sy] in enumerate(zip(seqs_mid, seqs_cat, noclk_seqs_mid, noclk_seqs_cat)):
             mid_mask[idx, :lengths_x[idx] + 1] = 1.
-            mid_his[idx, :lengths_x[idx]] = s_x
+            mid_his[idx, :lengths_x[idx]] = s_x  # 后对齐
             cat_his[idx, :lengths_x[idx]] = s_y
             noclk_mid_his[idx, :lengths_x[idx], :] = no_sx
             noclk_cat_his[idx, :lengths_x[idx], :] = no_sy
@@ -160,25 +160,25 @@ class SampleIO(object):
         for e in [uids, mids, cats]:
             results.append(np.reshape(e, (-1)))
             results.append(id_values)
-            results.append(id_seg) #3*3
+            results.append(id_seg)  # 3*3
         for e in [mid_his, cat_his]:
             results.append(np.reshape(e, (-1)))
             results.append(his_values)
-            results.append(his_seg) #3*2
+            results.append(his_seg)  # 2*3
         if return_neg:
             for e in [noclk_mid_his, noclk_cat_his]:
                 results.append(np.reshape(e, (-1)))
                 results.append(neg_his_values)
-                results.append(neg_his_seg) #3*2
+                results.append(neg_his_seg)  # 2*3
         results.extend(
-            [mid_mask, np.array(target, dtype=np.float32), np.array(lengths_x, dtype=np.int32)]) #3
+            [mid_mask, np.array(target, dtype=np.float32), np.array(lengths_x, dtype=np.int32)])  # 3
         # for split
-        results.append(np.array([n_samples, n_samples], dtype=np.int32)) #1
+        results.append(np.array([n_samples, n_samples], dtype=np.int32))  # 1
         # shape
         results.extend([np.array([-1, self.embedding_dim], dtype=np.int32),
                         np.array([-1, maxlen_x, self.embedding_dim],
                                  dtype=np.int32),
                         np.array(
                             [-1, maxlen_x, neg_samples, self.embedding_dim], dtype=np.int32),
-                        np.array([-1, maxlen_x], dtype=np.int32)]) #4
+                        np.array([-1, maxlen_x], dtype=np.int32)])  # 4
         return results
