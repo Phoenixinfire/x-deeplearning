@@ -134,7 +134,7 @@ def test(train_file=train_file,
           eval_model(eval_sess, test_ops))
 
 
-def predict(train_file=train_file,
+def predict(train_file=test_file,
             test_file=test_file,
             uid_voc=uid_voc,
             mid_voc=mid_voc,
