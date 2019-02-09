@@ -1,3 +1,4 @@
+#coding=utf-8
 # Copyright (C) 2016-2018 Alibaba Group Holding Limited
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -57,7 +58,7 @@ def train(train_file=train_file,
           item_info=item_info,
           reviews_info=reviews_info,
           batch_size=128,
-          maxlen=100,
+          maxlen=200,
           test_iter=700):
     if xdl.get_config('model') == 'din':
         model = Model_DIN(
@@ -80,13 +81,12 @@ def train(train_file=train_file,
         log_format = "[%(time)s] lstep[%(lstep)s] gstep[%(gstep)s] lqps[%(lqps)s] gqps[%(gqps)s] loss[%(loss)s]"
         hooks = [QpsMetricsHook(), MetricsPrinterHook(log_format)]
 
-        if xdl.get_task_index() == 0:  # 判断是否是local模式
+        if xdl.get_task_index() == 0:
             hooks.append(xdl.CheckpointHook(xdl.get_config('checkpoint', 'save_interval')))
         train_sess = xdl.TrainSession(hooks=hooks)
 
     with xdl.model_scope('test'):
-        test_ops = model.build_final_net(
-            EMBEDDING_DIM, sample_io, is_train=False)
+        test_ops = model.build_final_net(EMBEDDING_DIM, sample_io, is_train=False)
         test_sess = xdl.TrainSession()
 
     model.run(train_ops, train_sess, test_ops, test_sess, test_iter=test_iter)
@@ -125,9 +125,9 @@ def test(train_file=train_file,
     test_ops = tf_test_model(
         *model.xdl_embedding(datas, EMBEDDING_DIM, *sample_io.get_n()))
 
-    saver = xdl.Saver()
+    #saver = xdl.Saver()
     # checkpoint_version ="./ckpt_dir/ckpt-................8700/" # ckpt_version
-    saver.restore(version="ckpt-................8700")  # version=
+    #saver.restore(version="ckpt-................8700")  # version=
     eval_sess = xdl.TrainSession()
 
     print('test_auc: %.4f ----test_loss: %.4f ---- test_accuracy: %.4f ---- test_aux_loss: %.4f' %

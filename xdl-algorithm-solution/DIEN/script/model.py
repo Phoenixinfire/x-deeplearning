@@ -1,3 +1,4 @@
+#coding=utf-8
 # Copyright (C) 2016-2018 Alibaba Group Holding Limited
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -196,14 +197,14 @@ class Model(object):
         return y_hat
 
     def build_final_net(self, EMBEDDING_DIM, sample_io, is_train=True):
-        @xdl.tf_wrapper(is_training=True)
+        @xdl.tf_wrapper(is_training=True,gpu_memory_fraction=0.8)
         def tf_train_model(*inputs):
             with tf.variable_scope("tf_model", reuse=tf.AUTO_REUSE):
                 self.build_tf_net(inputs, is_train)
             train_ops = self.train_ops()
             return train_ops[0], train_ops[1:]
 
-        @xdl.tf_wrapper(is_training=False)
+        yxdl.tf_wrapper(is_training=False,gpu_memory_fraction=0.8)
         def tf_test_model(*inputs):
             with tf.variable_scope("tf_model", reuse=tf.AUTO_REUSE):
                 self.build_tf_net(inputs, is_train)
