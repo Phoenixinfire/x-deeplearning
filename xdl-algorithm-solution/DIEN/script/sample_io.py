@@ -40,6 +40,8 @@ class SampleIO(object):
             shuffle_each_epoch=False)
         self.test_data = DataIterator(
             test_file, uid_voc, mid_voc, cat_voc, item_info, reviews_info, batch_size, maxlen)
+        self.prepare_data = DataIterator(
+            test_file, uid_voc, mid_voc, cat_voc, item_info, reviews_info, batch_size, maxlen, not_predict=False)
         self.n_uid, self.n_mid, self.n_cat = self.train_data.get_n()  # 训练集和测试集是一致的
 
     def get_n(self):
@@ -57,6 +59,12 @@ class SampleIO(object):
         else:
             return self._py_func(self._next_test, sparse_cnt=5)
 
+    def next_predict(self):
+        if self.return_neg:
+            return self._py_func(self._next_predict)
+        else:
+            return self._py_func(self._next_predict, sparse_cnt=5)
+
     def _next_train(self):
         try:
             src, tgt = self.train_data.next()
@@ -68,6 +76,14 @@ class SampleIO(object):
     def _next_test(self):
         try:
             src, tgt = self.test_data.next()
+        except StopIteration:
+            self.src = self.tgt = None
+            raise OutOfRange("test end")
+        return self.prepare_data(src, tgt, self.maxlen, return_neg=self.return_neg)
+
+    def _next_predict(self):
+        try:
+            src, tgt = self.prepare_data.next()
         except StopIteration:
             self.src = self.tgt = None
             raise OutOfRange("test end")

@@ -53,7 +53,9 @@ class DataIterator:
                  skip_empty=False,
                  shuffle_each_epoch=False,
                  sort_by_length=True,
-                 max_batch_size=20):
+                 max_batch_size=20,
+                 not_predict=True):
+        self.not_predict = not_predict
         if shuffle_each_epoch:
             self.source_orig = source
             self.source = shuffle.main(self.source_orig, temporary=True)
@@ -164,11 +166,11 @@ class DataIterator:
                     break
 
                 uid = self.source_dicts[0][ss[1]
-                ] if ss[1] in self.source_dicts[0] else 0
+                ] if ss[1] in self.source_dicts[0] else 0  # uuid idx
                 mid = self.source_dicts[1][ss[2]
-                ] if ss[2] in self.source_dicts[1] else 0
+                ] if ss[2] in self.source_dicts[1] else 0  # mid idx
                 cat = self.source_dicts[2][ss[3]
-                ] if ss[3] in self.source_dicts[2] else 0
+                ] if ss[3] in self.source_dicts[2] else 0  # cat idx`
                 tmp = []
                 for fea in ss[4].split('\x02'):
                     m = self.source_dicts[1][fea] if fea in self.source_dicts[1] else 0
@@ -204,12 +206,18 @@ class DataIterator:
                         noclk_tmp_cat.append(self.meta_id_map[noclk_mid])
                         noclk_index += 1
                         if noclk_index >= 5:
-                            break  # 选择五个
+                            break  # 选择五个没有点击过的商品
                     noclk_mid_list.append(noclk_tmp_mid)
                     noclk_cat_list.append(noclk_tmp_cat)
-                source.append([uid, mid, cat, mid_list, cat_list,
-                               noclk_mid_list, noclk_cat_list])  # [[样本信息]...]
-                target.append([float(ss[0]), 1 - float(ss[0])])  # [[target信息]...]
+                if self.not_predict:
+                    source.append([uid, mid, cat, mid_list, cat_list,
+                                   noclk_mid_list, noclk_cat_list])  # [[样本信息]...]
+                    target.append([float(ss[0]), 1 - float(ss[0])])  # [[target信息]...]
+                else:
+                    for mid_idx, cat_idx in self.meta_id_map.items():
+                        source.append([uid, mid_idx, cat_idx, mid_list, cat_list,
+                                       noclk_mid_list, noclk_cat_list])  # [[样本信息]...]
+                        target.append([float(ss[0]), 1 - float(ss[0])])  # [[target信息]...]
 
                 if len(source) >= self.batch_size or len(target) >= self.batch_size:
                     break

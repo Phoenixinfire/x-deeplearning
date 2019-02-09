@@ -120,20 +120,6 @@ def test(train_file=train_file,
         test_ops = model.test_ops()
         return test_ops[0], test_ops[1:]
 
-    @xdl.tf_wrapper(is_training=False)
-    def tf_test_model(*inputs):
-        with tf.variable_scope("tf_model", reuse=tf.AUTO_REUSE):
-            model.build_tf_net(inputs, False)
-        test_ops = model.test_ops()
-        return test_ops[0], test_ops[1:]
-
-    @xdl.tf_wrapper(is_training=False)
-    def tf_test_model(*inputs):
-        with tf.variable_scope("tf_model", reuse=tf.AUTO_REUSE):
-            model.build_tf_net(inputs, False)
-        test_ops = model.test_ops()
-        return test_ops[0], test_ops[1:]
-
     # test
     datas = sample_io.next_test()
     test_ops = tf_test_model(
@@ -179,7 +165,7 @@ def predict(train_file=train_file,
         return predict_ops[0], predict_ops[1:]
 
     # predict
-    datas = sample_io.next_test()
+    datas = sample_io.next_predict()
     test_ops = tf_test_model(
         *model.xdl_embedding(datas, EMBEDDING_DIM, *sample_io.get_n()))  # predict_ops中包含有uuid
 
@@ -192,7 +178,7 @@ def predict(train_file=train_file,
     for r in stored_arr:
         cnt += 1
         if cnt < 10:
-            print(r[0], r[1])
+            print(r[0], r[1], r[2], r[3])
 
 
 if __name__ == '__main__':
@@ -208,5 +194,7 @@ if __name__ == '__main__':
         train()
     elif job_type == 'test':
         test()
+    elif job_type == "predict":
+        predict()
     else:
         print('job type must be train or test, do nothing...')
