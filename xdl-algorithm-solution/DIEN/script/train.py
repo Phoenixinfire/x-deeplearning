@@ -142,8 +142,7 @@ def predict(train_file=train_file,
             item_info=item_info,
             reviews_info=reviews_info,
             batch_size=128,
-            maxlen=100,
-            test_iter=700):
+            maxlen=100):
     # sample_io
     sample_io = SampleIO(train_file, test_file, uid_voc, mid_voc,
                          cat_voc, item_info, reviews_info, batch_size, maxlen, EMBEDDING_DIM)
@@ -166,14 +165,15 @@ def predict(train_file=train_file,
 
     # predict
     datas = sample_io.next_predict()
-    test_ops = tf_test_model(
+    predict_ops = tf_test_model(
         *model.xdl_embedding(datas, EMBEDDING_DIM, *sample_io.get_n()))  # predict_ops中包含有uuid
 
     saver = xdl.Saver()
     saver.restore(version="ckpt-................8700")
+
     eval_sess = xdl.TrainSession()
 
-    stored_arr = predict(eval_sess, test_ops)
+    stored_arr = predict_model(eval_sess, predict_ops)
     cnt = 0
     for r in stored_arr:
         cnt += 1

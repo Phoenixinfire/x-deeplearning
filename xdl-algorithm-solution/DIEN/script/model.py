@@ -65,7 +65,7 @@ def eval_model(sess, test_ops):
     return test_auc, loss_sum, accuracy_sum, aux_loss_sum
 
 
-def predict(sess, predict_ops):
+def predict_model(sess, predict_ops):
     nums = 0
     stored_arr = []
     while not sess.should_stop():
