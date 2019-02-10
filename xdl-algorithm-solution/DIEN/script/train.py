@@ -141,7 +141,7 @@ def predict(train_file=test_file,
             cat_voc=cat_voc,
             item_info=item_info,
             reviews_info=reviews_info,
-            batch_size=128,
+            batch_size=16,
             maxlen=100):
     # sample_io
     sample_io = SampleIO(train_file, test_file, uid_voc, mid_voc,
@@ -169,16 +169,19 @@ def predict(train_file=test_file,
         *model.xdl_embedding(datas, EMBEDDING_DIM, *sample_io.get_n()))  # predict_ops中包含有uuid
 
     saver = xdl.Saver()
-    saver.restore(version="ckpt-................8700")
+    saver.restore(version="ckpt-................3000")
 
     eval_sess = xdl.TrainSession()
 
     stored_arr = predict_model(eval_sess, predict_ops)
     cnt = 0
+    fw=open("predict_result.txt",'a+')
     for r in stored_arr:
+	fw.write("%s\t%s\t%s\t%s\t%s\n"%(str(r[0]),str(r[1]),str(r[2]),str(r[3]),str(r[4])))
         cnt += 1
         if cnt < 10:
             print(r[0], r[1], r[2], r[3])
+    fw.close()
 
 
 if __name__ == '__main__':
