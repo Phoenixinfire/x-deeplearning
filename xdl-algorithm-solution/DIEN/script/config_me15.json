@@ -1,9 +1,9 @@
 {
   "checkpoint": {
-    "output_dir": "./ckpt_dir_dien_15/",
-    "save_interval": 8000
+    "output_dir": "./ckpt_dir_dien_20190206_15/",
+    "save_interval": 3000
   },
-  "data_dir": "/data/dien_data_20190131_15/",
+  "data_dir": "/data/dien_data_20190206_15",
   "seed": 3,
   "job_type": "train",
   "model": "dien"
