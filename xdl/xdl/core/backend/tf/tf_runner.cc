@@ -43,6 +43,7 @@ Status TFRunner::Init(const std::string& graph_def_pb, float gpu_memory_fraction
   config.set_intra_op_parallelism_threads(0);
   config.set_inter_op_parallelism_threads(0);
   config.mutable_gpu_options()->set_per_process_gpu_memory_fraction(gpu_memory_fraction);
+  config.mutable_gpu_options()->set_allow_growth(true); //config useless
   tensorflow::SessionOptions session_options;
   session_options.config = config;
   session_ = NewSession(session_options);

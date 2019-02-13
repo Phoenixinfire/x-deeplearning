@@ -15,7 +15,7 @@
 # ==============================================================================
 
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2"
+os.environ["CUDA_VISIBLE_DEVICES"] = "3,2,1"
 import sys
 import time
 import math
@@ -202,6 +202,10 @@ if __name__ == '__main__':
     numpy.random.seed(SEED)
     random.seed(SEED)
 
+#    config = tf.ConfigProto()
+#    config.gpu_options.allow_growth = True
+#    session = tf.Session(config=config)
+    
     job_type = xdl.get_config("job_type")
     if job_type == 'train':
         train()
