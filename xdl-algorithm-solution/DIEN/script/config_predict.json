@@ -1,0 +1,10 @@
+{
+  "checkpoint": {
+    "output_dir": "./ckpt_dir/",
+    "save_interval": 1000
+  },
+  "data_dir": "/data/raw_data/",
+  "seed": 3,
+  "job_type": "predict",
+  "model": "dien"
+}

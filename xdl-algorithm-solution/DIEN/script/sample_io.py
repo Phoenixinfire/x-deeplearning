@@ -40,9 +40,11 @@ class SampleIO(object):
             train_file, uid_voc, mid_voc, cat_voc, item_info, reviews_info, batch_size, maxlen,
             shuffle_each_epoch=False)
         self.test_data = DataIterator(
-            test_file, uid_voc, mid_voc, cat_voc, item_info, reviews_info, batch_size, maxlen)
+            test_file, uid_voc, mid_voc, cat_voc, item_info, reviews_info, batch_size, maxlen,
+	    shuffle_each_epoch=False)
         self.predict_data = DataIterator(
-            test_file, uid_voc, mid_voc, cat_voc, item_info, reviews_info, batch_size, maxlen, not_predict=False)
+            test_file, uid_voc, mid_voc, cat_voc, item_info, reviews_info, batch_size, maxlen, 
+	    shuffle_each_epoch=False,not_predict=False)
         self.n_uid, self.n_mid, self.n_cat = self.train_data.get_n()  # 训练集和测试集是一致的
 
     def get_n(self):

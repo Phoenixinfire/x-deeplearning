@@ -80,6 +80,7 @@ def predict_model(sess, predict_ops):
         uid_1 = uid[:, 0].tolist()
         mid_1 = mid[:, 0].tolist()
         cat_1 = cat[:, 0].tolist()
+	
         for p0, p1, u, m, c in zip(prob_0, prob_1, uid_1, mid_1, cat_1):
             stored_arr.append([p0, p1, u, m, c])
     sess._finish = False
