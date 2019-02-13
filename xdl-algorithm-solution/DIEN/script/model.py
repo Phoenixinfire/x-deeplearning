@@ -1,4 +1,4 @@
-#coding=utf-8
+# coding=utf-8
 # Copyright (C) 2016-2018 Alibaba Group Holding Limited
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -77,11 +77,28 @@ def predict_model(sess, predict_ops):
         prob_1 = prob[:, 0].tolist()
 
         prob_0 = prob[:, 1].tolist()
-        uid_1 = uid[:, 0].tolist()
-        mid_1 = mid[:, 0].tolist()
-        cat_1 = cat[:, 0].tolist()
-	
-        for p0, p1, u, m, c in zip(prob_0, prob_1, uid_1, mid_1, cat_1):
+
+        for p0, p1 in zip(prob_0, prob_1):
+            stored_arr.append([p0, p1])
+    sess._finish = False
+    return stored_arr
+
+
+def predict_all_item_model(sess, ids, predict_ops):
+    nums = 0
+    stored_arr = []
+    while not sess.should_stop():
+        nums += 1
+        values = sess.run(predict_ops)
+        ido = sess.run(ids)
+        if values is None:
+            break
+        prob = values
+        prob_1 = prob[:, 0].tolist()
+
+        prob_0 = prob[:, 1].tolist()
+
+        for p0, p1, u, m, c in zip(prob_0, prob_1, ido[:, 0], ido[:, 1], ido[:, 2]):
             stored_arr.append([p0, p1, u, m, c])
     sess._finish = False
     return stored_arr
@@ -198,14 +215,14 @@ class Model(object):
         return y_hat
 
     def build_final_net(self, EMBEDDING_DIM, sample_io, is_train=True):
-        @xdl.tf_wrapper(is_training=True,gpu_memory_fraction=0.8)
+        @xdl.tf_wrapper(is_training=True, gpu_memory_fraction=0.8)
         def tf_train_model(*inputs):
             with tf.variable_scope("tf_model", reuse=tf.AUTO_REUSE):
                 self.build_tf_net(inputs, is_train)
             train_ops = self.train_ops()
             return train_ops[0], train_ops[1:]
 
-        @xdl.tf_wrapper(is_training=False,gpu_memory_fraction=0.8)
+        @xdl.tf_wrapper(is_training=False, gpu_memory_fraction=0.8)
         def tf_test_model(*inputs):
             with tf.variable_scope("tf_model", reuse=tf.AUTO_REUSE):
                 self.build_tf_net(inputs, is_train)
@@ -231,7 +248,7 @@ class Model(object):
 
     # 用于预测
     def predict_ops(self):
-        return [self.y_hat, self.tensors.uid, self.tensors.mid, self.tensors.cat]
+        return [self.y_hat]
 
     def run_test(self, test_ops, test_sess):
         if xdl.get_task_index() == 0 and test_ops is not None and test_sess is not None:
@@ -307,14 +324,14 @@ class Model_DIEN(Model):
         return results + datas[7:]
 
     def build_final_net(self, EMBEDDING_DIM, sample_io, is_train=True):
-        @xdl.tf_wrapper(is_training=True,gpu_memory_fraction=0.8)
+        @xdl.tf_wrapper(is_training=True, gpu_memory_fraction=0.8)
         def tf_train_model(*inputs):
             with tf.variable_scope("tf_model", reuse=tf.AUTO_REUSE):
                 self.build_tf_net(inputs, is_train)
             train_ops = self.train_ops()
             return train_ops[0], train_ops[1:]
 
-        @xdl.tf_wrapper(is_training=False,gpu_memory_fraction=0.8)
+        @xdl.tf_wrapper(is_training=False, gpu_memory_fraction=0.8)
         def tf_test_model(*inputs):
             with tf.variable_scope("tf_model", reuse=tf.AUTO_REUSE):
                 self.build_tf_net(inputs, is_train)
@@ -384,14 +401,14 @@ class Model_DIN(Model):
         return results + datas[7:]
 
     def build_final_net(self, EMBEDDING_DIM, sample_io, is_train=True):
-        @xdl.tf_wrapper(is_training=True,gpu_memory_fraction=0.8)
+        @xdl.tf_wrapper(is_training=True, gpu_memory_fraction=0.8)
         def tf_train_model(*inputs):
             with tf.variable_scope("tf_model", reuse=tf.AUTO_REUSE):
                 self.build_tf_net(inputs, is_train)
             train_ops = self.train_ops()
             return train_ops[0], train_ops[1:]
 
-        @xdl.tf_wrapper(is_training=False,gpu_memory_fraction=0.8)
+        @xdl.tf_wrapper(is_training=False, gpu_memory_fraction=0.8)
         def tf_test_model(*inputs):
             with tf.variable_scope("tf_model", reuse=tf.AUTO_REUSE):
                 self.build_tf_net(inputs, is_train)

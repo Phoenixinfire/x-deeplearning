@@ -1,4 +1,4 @@
-#coding=utf-8
+# coding=utf-8
 # Copyright (C) 2016-2018 Alibaba Group Holding Limited
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -41,10 +41,10 @@ class SampleIO(object):
             shuffle_each_epoch=False)
         self.test_data = DataIterator(
             test_file, uid_voc, mid_voc, cat_voc, item_info, reviews_info, batch_size, maxlen,
-	    shuffle_each_epoch=False)
+            shuffle_each_epoch=False)
         self.predict_data = DataIterator(
-            test_file, uid_voc, mid_voc, cat_voc, item_info, reviews_info, batch_size, maxlen, 
-	    shuffle_each_epoch=False,not_predict=False)
+            test_file, uid_voc, mid_voc, cat_voc, item_info, reviews_info, batch_size, maxlen,
+            shuffle_each_epoch=False, not_predict=False)
         self.n_uid, self.n_mid, self.n_cat = self.train_data.get_n()  # 训练集和测试集是一致的
 
     def get_n(self):
@@ -99,11 +99,13 @@ class SampleIO(object):
         types.extend([np.float32, np.float32, np.int32])
         types.extend([np.int32 for _ in range(5)])
         datas = xdl.py_func(fn, [], output_type=types)
+        ids = []
         sparse_tensors = []
         for i in range(sparse_cnt):
+            ids.append(datas[3 * i])
             sparse_tensors.append(xdl.SparseTensor(
                 datas[3 * i], datas[3 * i + 1], datas[3 * i + 2]))
-        return sparse_tensors + datas[sparse_cnt * 3:]
+        return ids, sparse_tensors + datas[sparse_cnt * 3:]
 
     def prepare_data(self, input, target, maxlen=None, return_neg=False):
         # x: a list of sentences
