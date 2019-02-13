@@ -1,4 +1,4 @@
-#coding=utf-8
+# coding=utf-8
 # Copyright (C) 2016-2018 Alibaba Group Holding Limited
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -124,13 +124,13 @@ def test(train_file=train_file,
         return test_ops[0], test_ops[1:]
 
     # test
-    datas = sample_io.next_test()
+    ids, datas = sample_io.next_test()
     test_ops = tf_test_model(
         *model.xdl_embedding(datas, EMBEDDING_DIM, *sample_io.get_n()))
 
-    #saver = xdl.Saver()
+    # saver = xdl.Saver()
     # checkpoint_version ="./ckpt_dir/ckpt-................8700/" # ckpt_version
-    #saver.restore(version="ckpt-................8700")  # version=
+    # saver.restore(version="ckpt-................8700")  # version=
     eval_sess = xdl.TrainSession()
 
     print('test_auc: %.4f ----test_loss: %.4f ---- test_accuracy: %.4f ---- test_aux_loss: %.4f' %
@@ -146,7 +146,7 @@ def predict(train_file=predict_file,
             reviews_info=reviews_info,
             batch_size=128,
             maxlen=100,
-	    day="default"):
+            day="default"):
     # sample_io
     if xdl.get_config('model') == 'din':
         model = Model_DIN(
@@ -164,35 +164,88 @@ def predict(train_file=predict_file,
         predict_ops = model.predict_ops()
         return predict_ops[0], predict_ops[1:]
 
-    files=os.listdir(predict_file)
+    files = os.listdir(predict_file)
     for f in files:
-	print(f)
+        print(f)
         eval_sess = xdl.TrainSession()
-	print("model")
+        print("model")
         saver = xdl.Saver()
         saver.restore(version="ckpt-................3000")
-	print("predict_start")
-	if f!="_SUCCESS":
-	    abs_file=predict_file+"/%s" %(f)
-	    print(abs_file)    
-    	    sample_io = SampleIO(abs_file, abs_file, uid_voc, mid_voc,
+        print("predict_start")
+        if f != "_SUCCESS":
+            abs_file = predict_file + "/%s" % (f)
+            print(abs_file)
+            sample_io = SampleIO(abs_file, abs_file, uid_voc, mid_voc,
+                                 cat_voc, item_info, reviews_info, batch_size, maxlen, EMBEDDING_DIM)
+            # predict
+            print("data_next")
+            ids, datas = sample_io.next_predict()
+            predict_ops = tf_test_model(
+                *model.xdl_embedding(datas, EMBEDDING_DIM, *sample_io.get_n()))  # predict_ops中包含有uuid
+            print("predict_real_start")
+            stored_arr = predict_model(eval_sess, predict_ops)
+            cnt = 0
+            print("predict_finish")
+            fw = open("%s/predict_result_tag_%s_%s.txt" % (predict_result_file, day, f), 'a+')
+            for r in stored_arr:
+                fw.write("%s\t%s\n" % (str(r[0]), str(r[1])))
+                cnt += 1
+                if cnt < 10:
+                    print(r[0], r[1], r[2], r[3])
+            fw.close()
+
+def predict_all_item(train_file=test_file,
+                     test_file=test_file,
+                     uid_voc=uid_voc,
+                     mid_voc=mid_voc,
+                     cat_voc=cat_voc,
+                     item_info=item_info,
+                     reviews_info=reviews_info,
+                     batch_size=128,
+                     maxlen=100,
+                     day="default"):
+    # sample_io
+    if xdl.get_config('model') == 'din':
+        model = Model_DIN(
+            EMBEDDING_DIM, HIDDEN_SIZE, ATTENTION_SIZE)
+    elif xdl.get_config('model') == 'dien':
+        model = Model_DIEN(
+            EMBEDDING_DIM, HIDDEN_SIZE, ATTENTION_SIZE)
+    else:
+        raise Exception('only support din and dien model')
+
+    @xdl.tf_wrapper(is_training=False)
+    def tf_test_model(*inputs):
+        with tf.variable_scope("tf_model", reuse=tf.AUTO_REUSE):
+            model.build_tf_net(inputs, False)
+        predict_ops = model.predict_ops()
+        return predict_ops[0], predict_ops[1:]
+
+    eval_sess = xdl.TrainSession()
+    print("model")
+    saver = xdl.Saver()
+    saver.restore(version="ckpt-................3000")
+    print("predict_start")
+
+    sample_io = SampleIO(test_file, test_file, uid_voc, mid_voc,
                          cat_voc, item_info, reviews_info, batch_size, maxlen, EMBEDDING_DIM)
-    	    # predict
-	    print("data_next")
-    	    datas = sample_io.next_test()
-    	    predict_ops = tf_test_model(
-    	        *model.xdl_embedding(datas, EMBEDDING_DIM, *sample_io.get_n()))  # predict_ops中包含有uuid
-	    print("predict_real_start")
-    	    stored_arr = predict_model(eval_sess, predict_ops)
-    	    cnt = 0
-	    print("predict_finish")
-    	    fw=open("%s/predict_result_tag_%s_%s.txt" %(predict_result_file,day,f),'a+')
-    	    for r in stored_arr:
-    	        fw.write("%s\t%s\n"%(str(r[0]),str(r[1])))
-    	        cnt += 1
-    	        if cnt < 10:
-    	            print(r[0], r[1], r[2], r[3])
-    	    fw.close()
+    # predict
+    print("data_next")
+    ids, datas = sample_io.next_predict()
+    predict_ops = tf_test_model(
+        *model.xdl_embedding(datas, EMBEDDING_DIM, *sample_io.get_n()))  # predict_ops中包含有uuid
+    print("predict_real_start")
+    stored_arr = predict_all_item_model(eval_sess, ids, predict_ops)
+    cnt = 0
+    print("predict_finish")
+    fw = open("%s/predict_result_tag_%s.txt" % (predict_result_file, day), 'a+')
+    for r in stored_arr:
+        fw.write("%s\t%s\t%s\t%s\t%s\n" % (str(r[0]), str(r[1]), str(r[2]), str(r[3]), str(r[4])))
+        cnt += 1
+        if cnt < 10:
+            print(r[0], r[1], r[2], r[3], r[4])
+    fw.close()
+
 
 if __name__ == '__main__':
     SEED = xdl.get_config("seed")
@@ -212,7 +265,7 @@ if __name__ == '__main__':
     elif job_type == 'test':
         test()
     elif job_type == "predict":
-        d=datetime.datetime.now().strftime('%Y-%m-%d')	
+        d = datetime.datetime.now().strftime('%Y-%m-%d')
         predict(day=d)
     else:
         print('job type must be train or test, do nothing...')

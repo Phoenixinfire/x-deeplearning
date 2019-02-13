@@ -1,4 +1,4 @@
-#coding=utf-8
+# coding=utf-8
 # Copyright (C) 2016-2018 Alibaba Group Holding Limited
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -166,12 +166,9 @@ class DataIterator:
                 except IndexError:
                     break
 
-                uid = self.source_dicts[0][ss[1]
-                ] if ss[1] in self.source_dicts[0] else 0  # uuid idx
-                mid = self.source_dicts[1][ss[2]
-                ] if ss[2] in self.source_dicts[1] else 0  # mid idx
-                cat = self.source_dicts[2][ss[3]
-                ] if ss[3] in self.source_dicts[2] else 0  # cat idx`
+                uid = self.source_dicts[0][ss[1]] if ss[1] in self.source_dicts[0] else 0  # uuid idx
+                mid = self.source_dicts[1][ss[2]] if ss[2] in self.source_dicts[1] else 0  # mid idx
+                cat = self.source_dicts[2][ss[3]] if ss[3] in self.source_dicts[2] else 0  # cat idx
                 tmp = []
                 for fea in ss[4].split('\x02'):
                     m = self.source_dicts[1][fea] if fea in self.source_dicts[1] else 0
