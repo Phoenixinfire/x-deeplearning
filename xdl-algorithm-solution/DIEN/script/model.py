@@ -84,21 +84,25 @@ def predict_model(sess, predict_ops):
     return stored_arr
 
 
-def predict_all_item_model(sess, ids, predict_ops):
+def predict_all_item_model(sess, idx_ops, predict_ops):
     nums = 0
     stored_arr = []
     while not sess.should_stop():
         nums += 1
         values = sess.run(predict_ops)
-        ido = sess.run(ids)
+	
+        uid,mid,cat = sess.run(idx_ops)
+	print("checkxxx",type(uid))
         if values is None:
             break
-        prob = values
-        prob_1 = prob[:, 0].tolist()
+        prob,target = values
+	print(np.array(prob).shape)
+	print(uid.shape)
+        prob_1 =[x[0] for x in prob]
 
-        prob_0 = prob[:, 1].tolist()
-
-        for p0, p1, u, m, c in zip(prob_0, prob_1, ido[:, 0], ido[:, 1], ido[:, 2]):
+        prob_0 = [x[1] for x in prob]
+        for p0, p1, u, m, c in zip(prob_0, prob_1,uid,mid,cat ):
+	    print(p0, p1, u, m, c)
             stored_arr.append([p0, p1, u, m, c])
     sess._finish = False
     return stored_arr
@@ -248,7 +252,10 @@ class Model(object):
 
     # 用于预测
     def predict_ops(self):
-        return [self.y_hat]
+        return [self.y_hat,self.tensors.target]
+    
+    def idx_ops(self,idxs):
+	return [idxs[0],idxs[1],idxs[2]]
 
     def run_test(self, test_ops, test_sess):
         if xdl.get_task_index() == 0 and test_ops is not None and test_sess is not None:

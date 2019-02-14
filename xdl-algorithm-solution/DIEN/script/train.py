@@ -15,7 +15,7 @@
 # ==============================================================================
 
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "3,2,1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "2,1,3"
 import sys
 import time
 import math
@@ -219,6 +219,7 @@ def predict_all_item(train_file=test_file,
         with tf.variable_scope("tf_model", reuse=tf.AUTO_REUSE):
             model.build_tf_net(inputs, False)
         predict_ops = model.predict_ops()
+	
         return predict_ops[0], predict_ops[1:]
 
     eval_sess = xdl.TrainSession()
@@ -232,15 +233,19 @@ def predict_all_item(train_file=test_file,
     # predict
     print("data_next")
     ids, datas = sample_io.next_predict()
-    predict_ops = tf_test_model(
-        *model.xdl_embedding(datas, EMBEDDING_DIM, *sample_io.get_n()))  # predict_ops中包含有uuid
+    print("data_size",len(ids),len(datas))
+    predict_ops = tf_test_model(*model.xdl_embedding(datas, EMBEDDING_DIM, *sample_io.get_n()))  # predict_ops中包含有uuid
+    #print("reslen",len(res))
+    #predict_ops=[predict_ops_raw[0],predict_ops_raw[1:]]
+    #idx_ops=[idx_ops_raw[0],idx_ops_raw[1],idx_ops_raw[2]]
+
     print("predict_real_start")
     stored_arr = predict_all_item_model(eval_sess, ids, predict_ops)
     cnt = 0
     print("predict_finish")
-    fw = open("%s/predict_result_tag_%s.txt" % (predict_result_file, day), 'a+')
+    #fw = open("%s/predict_result_tag_%s.txt" % (predict_result_file, day), 'a+')
     for r in stored_arr:
-        fw.write("%s\t%s\t%s\t%s\t%s\n" % (str(r[0]), str(r[1]), str(r[2]), str(r[3]), str(r[4])))
+        #fw.write("%s\t%s\t%s\t%s\t%s\n" % (str(r[0]), str(r[1]), str(r[2]), str(r[3]), str(r[4])))
         cnt += 1
         if cnt < 10:
             print(r[0], r[1], r[2], r[3], r[4])
@@ -266,6 +271,7 @@ if __name__ == '__main__':
         test()
     elif job_type == "predict":
         d = datetime.datetime.now().strftime('%Y-%m-%d')
-        predict(day=d)
+	predict_all_item(day=d)
+        #predict(day=d)
     else:
         print('job type must be train or test, do nothing...')

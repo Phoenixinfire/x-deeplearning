@@ -101,6 +101,7 @@ class DataIterator:
         self.n_uid = len(self.source_dicts[0])
         self.n_mid = len(self.source_dicts[1])
         self.n_cat = len(self.source_dicts[2])
+	#print(self.n_uid,self.n_mid,self.n_cat)
 
         self.shuffle = shuffle_each_epoch
         self.sort_by_length = sort_by_length
@@ -136,8 +137,7 @@ class DataIterator:
                 ss = self.source.readline()
                 if ss == "":
                     break
-                self.source_buffer.append(ss.strip("\n").split(
-                    "\t"))  # 0       ALEIRCCL8P1C4   0061284874      Books   00605794120060916575   BooksBooks
+                self.source_buffer.append(ss.strip("\n").split("\t"))  # 0       ALEIRCCL8P1C4   0061284874      Books   00605794120060916575   BooksBooks
 
             # sort by  history behavior length
             if self.sort_by_length:
@@ -212,12 +212,13 @@ class DataIterator:
                                    noclk_mid_list, noclk_cat_list])  # [[样本信息]...]
                     target.append([float(ss[0]), 1 - float(ss[0])])  # [[target信息]...]
                 else:
+		    print("meta_id_map,",len(self.meta_id_map))
                     for mid_idx, cat_idx in self.meta_id_map.items():
                         source.append([uid, mid_idx, cat_idx, mid_list, cat_list,
                                        noclk_mid_list, noclk_cat_list])  # [[样本信息]...]
                         target.append([float(ss[0]), 1 - float(ss[0])])  # [[target信息]...]
 
-                if len(source) >= self.batch_size or len(target) >= self.batch_size:
+                if len(source) >= self.batch_size*len(self.meta_id_map) or len(target) >= self.batch_size*len(self.meta_id_map):
                     break
         except IOError:
             self.end_of_data = True
@@ -225,5 +226,5 @@ class DataIterator:
         # all sentence pairs in maxibatch filtered out because of length
         if len(source) == 0 or len(target) == 0:
             source, target = self.next()
-
+	print(len(source),len(target))
         return source, target

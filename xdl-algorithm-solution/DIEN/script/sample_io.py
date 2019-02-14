@@ -43,7 +43,7 @@ class SampleIO(object):
             test_file, uid_voc, mid_voc, cat_voc, item_info, reviews_info, batch_size, maxlen,
             shuffle_each_epoch=False)
         self.predict_data = DataIterator(
-            test_file, uid_voc, mid_voc, cat_voc, item_info, reviews_info, batch_size, maxlen,
+            test_file, uid_voc, mid_voc, cat_voc, item_info, reviews_info, 1, maxlen,
             shuffle_each_epoch=False, not_predict=False)
         self.n_uid, self.n_mid, self.n_cat = self.train_data.get_n()  # 训练集和测试集是一致的
 
@@ -100,9 +100,13 @@ class SampleIO(object):
         types.extend([np.int32 for _ in range(5)])
         datas = xdl.py_func(fn, [], output_type=types)
         ids = []
+        ids.append(datas[0])
+
+	print("checkouttype",type(datas[0]))
+	ids.append(datas[3])
+	ids.append(datas[6])
         sparse_tensors = []
         for i in range(sparse_cnt):
-            ids.append(datas[3 * i])
             sparse_tensors.append(xdl.SparseTensor(
                 datas[3 * i], datas[3 * i + 1], datas[3 * i + 2]))
         return ids, sparse_tensors + datas[sparse_cnt * 3:]
