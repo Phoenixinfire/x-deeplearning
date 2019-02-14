@@ -102,7 +102,7 @@ class SampleIO(object):
         ids = []
         ids.append(datas[0])
 
-	print("checkouttype",type(datas[0]))
+	print("checkout_xdl_py_fun_output",type(datas[0]))
 	ids.append(datas[3])
 	ids.append(datas[6])
         sparse_tensors = []

@@ -218,8 +218,7 @@ def predict_all_item(train_file=test_file,
     def tf_test_model(*inputs):
         with tf.variable_scope("tf_model", reuse=tf.AUTO_REUSE):
             model.build_tf_net(inputs, False)
-        predict_ops = model.predict_ops()
-	
+        predict_ops = model.predict_ops()	
         return predict_ops[0], predict_ops[1:]
 
     eval_sess = xdl.TrainSession()

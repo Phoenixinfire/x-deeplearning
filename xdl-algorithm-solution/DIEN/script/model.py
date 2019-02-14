@@ -92,17 +92,19 @@ def predict_all_item_model(sess, idx_ops, predict_ops):
         values = sess.run(predict_ops)
 	
         uid,mid,cat = sess.run(idx_ops)
-	print("checkxxx",type(uid))
+	print("checktype",type(uid))
         if values is None:
             break
         prob,target = values
-	print(np.array(prob).shape)
-	print(uid.shape)
+	print("prob_shape",np.array(prob).shape)
+	print("uid_shape",uid.shape)
         prob_1 =[x[0] for x in prob]
-
         prob_0 = [x[1] for x in prob]
-        for p0, p1, u, m, c in zip(prob_0, prob_1,uid,mid,cat ):
-	    print(p0, p1, u, m, c)
+	cnt=0
+        for p0, p1, u, m, c in zip(prob_0, prob_1,uid,mid,cat):
+	    if cnt<=10:
+		cnt+=1
+		print(p0, p1, u, m, c)
             stored_arr.append([p0, p1, u, m, c])
     sess._finish = False
     return stored_arr
