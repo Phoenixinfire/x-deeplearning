@@ -133,6 +133,7 @@ class DataTensors(object):
         self.seq_len.set_shape([None])
 
 
+
 class Model(object):
     def __init__(self, EMBEDDING_DIM, HIDDEN_SIZE, ATTENTION_SIZE, use_negsampling=False):
         self.embedding_dim = EMBEDDING_DIM
@@ -318,6 +319,7 @@ class Model_DIEN(Model):
 
     def xdl_embedding(self, datas, EMBEDDING_DIM, n_uid, n_mid, n_cat):
         results = []
+
         uid_emb = xdl.embedding("uid_embedding", datas[0], get_xdl_initializer(),
                                 EMBEDDING_DIM, n_uid, 'sum')
         results.append(uid_emb)

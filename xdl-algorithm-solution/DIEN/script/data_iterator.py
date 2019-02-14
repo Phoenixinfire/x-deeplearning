@@ -162,7 +162,7 @@ class DataIterator:
 
                 # read from source file and map to word index
                 try:
-                    ss = self.source_buffer.pop()
+                    ss = self.source_buffer.pop()  # one line one time
                 except IndexError:
                     break
 
@@ -173,7 +173,7 @@ class DataIterator:
                 for fea in ss[4].split('\x02'):
                     m = self.source_dicts[1][fea] if fea in self.source_dicts[1] else 0
                     tmp.append(m)
-                mid_list = tmp  # 商品item list
+                mid_list = tmp  # 商品item list idx
 
                 tmp1 = []
                 for fea in ss[5].split('\x02'):
@@ -190,7 +190,7 @@ class DataIterator:
 
                 noclk_mid_list = []
                 noclk_cat_list = []
-                for pos_mid in mid_list:
+                for pos_mid in mid_list:  # 为每个浏览过的商品item idx随机选择一个5个负样本
                     noclk_tmp_mid = []
                     noclk_tmp_cat = []
                     noclk_index = 0

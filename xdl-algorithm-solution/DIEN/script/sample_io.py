@@ -148,9 +148,9 @@ class SampleIO(object):
             if len(lengths_x) < 1:
                 return None, None, None, None
 
-        n_samples = len(seqs_mid)  # 样本条数
-        maxlen_x = np.max(lengths_x) + 1  # 每个用户访问历史记录有长有短，去最长的那一个,后续填充矩阵按后对齐
-        neg_samples = len(noclk_seqs_mid[0][0])
+        n_samples = len(seqs_mid)  # input长度
+        maxlen_x = np.max(lengths_x) + 1  # 每个用户访问历史记录有长有短，取最长的那一个,后续填充矩阵按后对齐
+        neg_samples = len(noclk_seqs_mid[0][0])  # =5
 
         mid_his = np.zeros((n_samples, maxlen_x)).astype('int64')
         cat_his = np.zeros((n_samples, maxlen_x)).astype('int64')
@@ -183,16 +183,16 @@ class SampleIO(object):
 
         results = []
         for e in [uids, mids, cats]:
-            results.append(np.reshape(e, (-1)))
-            results.append(id_values)
-            results.append(id_seg)  # 3*3
+            results.append(np.reshape(e, (-1)))  # 打平成一维数组
+            results.append(id_values)  # ones数组长度
+            results.append(id_seg)  # id编号,3*3
         for e in [mid_his, cat_his]:
-            results.append(np.reshape(e, (-1)))
+            results.append(np.reshape(e, (-1)))  # 打平成一维数组
             results.append(his_values)
             results.append(his_seg)  # 2*3
         if return_neg:
             for e in [noclk_mid_his, noclk_cat_his]:
-                results.append(np.reshape(e, (-1)))
+                results.append(np.reshape(e, (-1)))  # 打平成一维数组
                 results.append(neg_his_values)
                 results.append(neg_his_seg)  # 2*3
         results.extend(
@@ -201,9 +201,7 @@ class SampleIO(object):
         results.append(np.array([n_samples, n_samples], dtype=np.int32))  # 1
         # shape
         results.extend([np.array([-1, self.embedding_dim], dtype=np.int32),
-                        np.array([-1, maxlen_x, self.embedding_dim],
-                                 dtype=np.int32),
-                        np.array(
-                            [-1, maxlen_x, neg_samples, self.embedding_dim], dtype=np.int32),
+                        np.array([-1, maxlen_x, self.embedding_dim], dtype=np.int32),
+                        np.array([-1, maxlen_x, neg_samples, self.embedding_dim], dtype=np.int32),
                         np.array([-1, maxlen_x], dtype=np.int32)])  # 4
         return results
