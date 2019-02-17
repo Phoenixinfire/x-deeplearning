@@ -21,7 +21,7 @@ import random
 import gzip
 import shuffle
 from tensorflow.python.lib.io import file_io
-
+import random
 
 def unicode_to_utf8(d):
     return dict((key.encode("UTF-8"), value) for (key, value) in d.items())
@@ -84,7 +84,23 @@ class DataIterator:
             else:
                 cat_idx = 0
             self.meta_id_map[mid_idx] = cat_idx
-
+        
+        group_cat_mid_map={}
+        for midx_idx,cat_idx in self.meta_id_map.items():
+            if cat_idx not in group_cat_mid_map:
+                group_cat_mid_map[cat_idx]=[midx_idx]
+            else:
+                group_cat_mid_map[cat_idx].append(midx_idx)
+        
+        self.sample_meta_mid_cat_map={}
+        for cat,mid_list in group_cat_mid_map.items():
+            if len(mid_list)<=8:
+                for mid_idx in mid_list:
+                    self.sample_meta_mid_cat_map[mid_idx]=cat
+            else:
+                for mid_idx in random.sample(mid_list,8):
+                    self.sample_meta_mid_cat_map[mid_idx]=cat
+	#print("sample_meta_mid_cat_map",len(self.sample_meta_mid_cat_map))        
         f_review = fopen(reviews_info, "r")
         self.mid_list_for_random = []
         for line in f_review:
@@ -131,14 +147,13 @@ class DataIterator:
 
         source = []
         target = []
-
+	#print("IterationStart")
         if len(self.source_buffer) == 0:
             for k_ in xrange(self.k):
                 ss = self.source.readline()
                 if ss == "":
                     break
                 self.source_buffer.append(ss.strip("\n").split("\t"))  # 0       ALEIRCCL8P1C4   0061284874      Books   00605794120060916575   BooksBooks
-
             # sort by  history behavior length
             if self.sort_by_length:
                 his_length = numpy.array(
@@ -149,6 +164,8 @@ class DataIterator:
                 self.source_buffer = _sbuf
             else:
                 self.source_buffer.reverse()
+	
+	#print("source_buffer_len",len(self.source_buffer))
 
         if len(self.source_buffer) == 0:
             self.end_of_data = False
@@ -162,11 +179,14 @@ class DataIterator:
 
                 # read from source file and map to word index
                 try:
+		    #print(len(self.source_buffer),self.source_buffer[-2:])
                     ss = self.source_buffer.pop()  # one line one time
                 except IndexError:
                     break
 
                 uid = self.source_dicts[0][ss[1]] if ss[1] in self.source_dicts[0] else 0  # uuid idx
+		if uid==13895:
+		    print(ss)
                 mid = self.source_dicts[1][ss[2]] if ss[2] in self.source_dicts[1] else 0  # mid idx
                 cat = self.source_dicts[2][ss[3]] if ss[3] in self.source_dicts[2] else 0  # cat idx
                 tmp = []
@@ -211,20 +231,23 @@ class DataIterator:
                     source.append([uid, mid, cat, mid_list, cat_list,
                                    noclk_mid_list, noclk_cat_list])  # [[样本信息]...]
                     target.append([float(ss[0]), 1 - float(ss[0])])  # [[target信息]...]
+		    if len(source) >= self.batch_size or len(target) >= self.batch_size:
+			break
                 else:
-		    print("meta_id_map,",len(self.meta_id_map))
-                    for mid_idx, cat_idx in self.meta_id_map.items():
+		    #print("meta_id_map,",len(self.meta_id_map))
+                    for mid_idx, cat_idx in self.sample_meta_mid_cat_map.items():
                         source.append([uid, mid_idx, cat_idx, mid_list, cat_list,
                                        noclk_mid_list, noclk_cat_list])  # [[样本信息]...]
                         target.append([float(ss[0]), 1 - float(ss[0])])  # [[target信息]...]
 
-                if len(source) >= self.batch_size*len(self.meta_id_map) or len(target) >= self.batch_size*len(self.meta_id_map):
-                    break
+                    if len(source) >= self.batch_size*len(self.sample_meta_mid_cat_map) or len(target) >= self.batch_size*len(self.sample_meta_mid_cat_map):
+                    	break
         except IOError:
             self.end_of_data = True
 
         # all sentence pairs in maxibatch filtered out because of length
         if len(source) == 0 or len(target) == 0:
+	    #print("itsisatrip")
             source, target = self.next()
-	print(len(source),len(target))
+	#print("source_result&target_result",len(source),len(target))
         return source, target

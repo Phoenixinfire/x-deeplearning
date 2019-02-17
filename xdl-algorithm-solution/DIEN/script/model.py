@@ -31,6 +31,9 @@ import datetime
 from xdl.python.utils.metrics import add_metrics
 import numpy as np
 
+from operator import itemgetter
+import time
+
 best_auc = 0.0
 
 
@@ -84,28 +87,54 @@ def predict_model(sess, predict_ops):
     return stored_arr
 
 
-def predict_all_item_model(sess, idx_ops, predict_ops):
+def predict_all_item_model(sess, idx_ops, predict_ops,predict_result_file,day,model):
     nums = 0
     stored_arr = []
     while not sess.should_stop():
         nums += 1
-        values = sess.run(predict_ops)
-	
-        uid,mid,cat = sess.run(idx_ops)
-	print("checktype",type(uid))
+	    #pst=time.time()
+	#print("SessIn")
+        values,ids = sess.run([predict_ops,idx_ops])
+	    #pet=time.time()
+	    #print("totally_predict_time",(pet-pst))
+        uid,mid,cat = ids  #sess.run(idx_ops)
+	#print("SessPredictOut")
+	    #print("checktype",type(uid))
         if values is None:
             break
         prob,target = values
-	print("prob_shape",np.array(prob).shape)
-	print("uid_shape",uid.shape)
+	    #print("prob_shape",np.array(prob).shape)
+	    #print("uid_shape",uid.shape)
         prob_1 =[x[0] for x in prob]
         prob_0 = [x[1] for x in prob]
-	cnt=0
+        cnt=0
+	#print("batch_predict_len",len(prob_1))
+	#print("batch_predict_id_len",len(uid))
+	    #wst=time.time()
+    	fw = open("%s/predict_result_tag_%s_%s.txt" % (predict_result_file, day,model), 'a+')
+        #temp=dict([])
         for p0, p1, u, m, c in zip(prob_0, prob_1,uid,mid,cat):
-	    if cnt<=10:
-		cnt+=1
-		print(p0, p1, u, m, c)
-            stored_arr.append([p0, p1, u, m, c])
+	    fw.write("%s\t%s\t%s\t%s\t%s\n" % (str(p0), str(p1), str(u), str(m), str(c)))
+	    #if cnt <= 10:
+            #	cnt+=1
+            #    print(p0, p1, u, m, c)
+
+	        #temp.append([p0, p1, u, m, c])
+	        #if u in temp:
+		    #    temp[u].append([p0, p1, u, m, c])
+	        #else:
+		    #    temp[u]=[[p0, p1, u, m, c]]
+
+    	#for k,v in temp.items():	
+    	#    sort_temp=sorted(v, key=itemgetter(0),reverse=True)
+    	#    for res in sort_temp[:100]:
+    	#	    #print(p0, p1, u, m, c)
+    	#        p0, p1, u, m, c=res	
+    	#        fw.write("%s\t%s\t%s\t%s\t%s\n" % (str(p0), str(p1), str(u), str(m), str(c)))
+    	#wet=time.time()
+    	#print("totally_write_time",(wet-wst))
+        fw.close()
+                #stored_arr.append([p0, p1, u, m, c])
     sess._finish = False
     return stored_arr
 

@@ -15,7 +15,7 @@
 # ==============================================================================
 
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "2,1,3"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3"
 import sys
 import time
 import math
@@ -214,7 +214,7 @@ def predict_all_item(train_file=test_file,
     else:
         raise Exception('only support din and dien model')
 
-    @xdl.tf_wrapper(is_training=False)
+    @xdl.tf_wrapper(is_training=False, gpu_memory_fraction=0.9)
     def tf_test_model(*inputs):
         with tf.variable_scope("tf_model", reuse=tf.AUTO_REUSE):
             model.build_tf_net(inputs, False)
@@ -222,33 +222,34 @@ def predict_all_item(train_file=test_file,
         return predict_ops[0], predict_ops[1:]
 
     eval_sess = xdl.TrainSession()
-    print("model")
+    #print("model")
     saver = xdl.Saver()
-    saver.restore(version="ckpt-................3000")
-    print("predict_start")
-
+    saver.restore(version="ckpt-................4000")
+    #print("predict_start")
+    #print("make_SampleIO_DATA")
     sample_io = SampleIO(test_file, test_file, uid_voc, mid_voc,
-                         cat_voc, item_info, reviews_info, batch_size, maxlen, EMBEDDING_DIM)
+                         cat_voc, item_info, reviews_info,32, maxlen, EMBEDDING_DIM)
     # predict
-    print("data_next")
+    #print("data_next")
+    #print("SampleIO_next")
     ids, datas = sample_io.next_predict()
-    print("data_size",len(ids),len(datas))
+    #print("data_size",len(ids),len(datas))
     predict_ops = tf_test_model(*model.xdl_embedding(datas, EMBEDDING_DIM, *sample_io.get_n()))  # predict_ops中包含有uuid
     #print("reslen",len(res))
     #predict_ops=[predict_ops_raw[0],predict_ops_raw[1:]]
     #idx_ops=[idx_ops_raw[0],idx_ops_raw[1],idx_ops_raw[2]]
-
-    print("predict_real_start")
-    stored_arr = predict_all_item_model(eval_sess, ids, predict_ops)
+    #print("PredictAndSave")
+    #print("predict_real_start")
+    stored_arr = predict_all_item_model(eval_sess, ids, predict_ops,predict_result_file, day,xdl.get_config('model'))
     cnt = 0
-    print("predict_finish")
+    #print("predict_finish")
     #fw = open("%s/predict_result_tag_%s.txt" % (predict_result_file, day), 'a+')
-    for r in stored_arr:
-        #fw.write("%s\t%s\t%s\t%s\t%s\n" % (str(r[0]), str(r[1]), str(r[2]), str(r[3]), str(r[4])))
-        cnt += 1
-        if cnt < 10:
-            print(r[0], r[1], r[2], r[3], r[4])
-    fw.close()
+    #for r in stored_arr:
+    #    fw.write("%s\t%s\t%s\t%s\t%s\n" % (str(r[0]), str(r[1]), str(r[2]), str(r[3]), str(r[4])))
+    #    cnt += 1
+    #    if cnt < 10:
+    #        print(r[0], r[1], r[2], r[3], r[4])
+    #fw.close()
 
 
 if __name__ == '__main__':
@@ -269,7 +270,8 @@ if __name__ == '__main__':
     elif job_type == 'test':
         test()
     elif job_type == "predict":
-        d = datetime.datetime.now().strftime('%Y-%m-%d')
+        #d = datetime.datetime.now().strftime('%Y-%m-%d')
+	d="2019-02-17"
 	predict_all_item(day=d)
         #predict(day=d)
     else:

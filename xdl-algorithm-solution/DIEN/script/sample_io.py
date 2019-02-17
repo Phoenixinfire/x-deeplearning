@@ -43,7 +43,7 @@ class SampleIO(object):
             test_file, uid_voc, mid_voc, cat_voc, item_info, reviews_info, batch_size, maxlen,
             shuffle_each_epoch=False)
         self.predict_data = DataIterator(
-            test_file, uid_voc, mid_voc, cat_voc, item_info, reviews_info, 1, maxlen,
+            test_file, uid_voc, mid_voc, cat_voc, item_info, reviews_info,batch_size , maxlen,
             shuffle_each_epoch=False, not_predict=False)
         self.n_uid, self.n_mid, self.n_cat = self.train_data.get_n()  # 训练集和测试集是一致的
 
@@ -87,6 +87,7 @@ class SampleIO(object):
     def _next_predict(self):
         try:
             src, tgt = self.predict_data.next()
+	    #print("sample_io_get_predict_data_next",len(src),len(tgt))
         except StopIteration:
             self.src = self.tgt = None
             raise OutOfRange("test end")
@@ -102,7 +103,7 @@ class SampleIO(object):
         ids = []
         ids.append(datas[0])
 
-	print("checkout_xdl_py_fun_output",type(datas[0]))
+	#print("checkout_xdl_py_fun_output",type(datas[0]))
 	ids.append(datas[3])
 	ids.append(datas[6])
         sparse_tensors = []
@@ -114,7 +115,8 @@ class SampleIO(object):
     def prepare_data(self, input, target, maxlen=None, return_neg=False):
         # x: a list of sentences
         # [uid, mid, cat, mid_list, cat_list,noclk_mid_list, noclk_cat_list]
-        lengths_x = [len(s[4]) for s in input]
+        #print("prepare_data",len(input))
+	lengths_x = [len(s[4]) for s in input]
         seqs_mid = [inp[3] for inp in input]
         seqs_cat = [inp[4] for inp in input]
         noclk_seqs_mid = [inp[5] for inp in input]
@@ -149,6 +151,7 @@ class SampleIO(object):
                 return None, None, None, None
 
         n_samples = len(seqs_mid)  # input长度
+	#print("sample_io_sample_len",n_samples)
         maxlen_x = np.max(lengths_x) + 1  # 每个用户访问历史记录有长有短，取最长的那一个,后续填充矩阵按后对齐
         neg_samples = len(noclk_seqs_mid[0][0])  # =5
 
@@ -180,7 +183,7 @@ class SampleIO(object):
             [i + 1 for i in range(n_samples * maxlen_x)], dtype=np.int32)
         neg_his_seg = np.array(
             [i + 1 for i in range(n_samples * maxlen_x * neg_samples)], dtype=np.int32)
-
+	#print("predict_next_uid_len",len(uids))
         results = []
         for e in [uids, mids, cats]:
             results.append(np.reshape(e, (-1)))  # 打平成一维数组
