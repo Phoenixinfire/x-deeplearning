@@ -15,8 +15,8 @@
 # ==============================================================================
 
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] ="1,0,2,3" 
 
+os.environ["CUDA_VISIBLE_DEVICES"] = "1,0,2,3"
 
 import sys
 import time
@@ -25,7 +25,7 @@ import random
 import datetime
 import tensorflow as tf
 import numpy
-
+from multiprocessing import Pool
 from model import *
 from utils import *
 from sample_io import SampleIO
@@ -39,20 +39,20 @@ HIDDEN_SIZE = 18 * 2
 ATTENTION_SIZE = 18 * 2
 best_auc = 0.0
 
+now_time = datetime.datetime.now()
+yes_time = now_time + datetime.timedelta(days=-1)
 
-now_time=datetime.datetime.now()
-yes_time=now_time+datetime.timedelta(days=-1)
+# yes_d=yes_time.strftime("%Y-%m-%d")
 
-#yes_d=yes_time.strftime("%Y-%m-%d")
-
-yes_d=xdl.get_app_id()
+yes_d = xdl.get_app_id()
 print(yes_d)
 
+
 def get_data_prefix():
-    return os.path.join(xdl.get_config('data_dir'),"dt=%s"%(yes_d))
+    return os.path.join(xdl.get_config('data_dir'), "dt=%s" % (yes_d))
+
 
 print(get_data_prefix())
-
 
 train_file = os.path.join(get_data_prefix(), "local_train_splitByUser")
 test_file = os.path.join(get_data_prefix(), "local_test_splitByUser")
@@ -206,6 +206,79 @@ def predict(train_file=predict_file,
                     print(r[0], r[1], r[2], r[3])
             fw.close()
 
+
+def predict_each_core(sess, file_to_predict, predict_result_file, day, model, uid_voc, mid_voc,
+                      cat_voc, item_info, reviews_info, maxlen, index):
+    sample_io = SampleIO(file_to_predict, file_to_predict, uid_voc, mid_voc,
+                         cat_voc, item_info, reviews_info, 32, maxlen, EMBEDDING_DIM)
+    ids, datas = sample_io.next_predict()  # print("data_size",len(ids),len(datas))
+    predict_ops = tf_test_model(*model.xdl_embedding(datas, EMBEDDING_DIM, *sample_io.get_n()))  # predict_ops中包含有uuid
+    nums = 0
+    stored_arr = []
+    while not sess.should_stop():
+        nums += 1
+        values, ids = sess.run([predict_ops, idx_ops])
+        uid, mid, cat = ids  # sess.run(idx_ops)
+        if values is None:
+            break
+        prob, target = values
+        prob_1 = [x[0] for x in prob]
+        prob_0 = [x[1] for x in prob]
+        cnt = 0
+        fw = open("%s/predict_result_tag_%s_%s_%s.txt" % (predict_result_file, day, model, index), 'a+')
+        for p0, p1, u, m, c in zip(prob_0, prob_1, uid, mid, cat):
+            fw.write("%s\t%s\t%s\t%s\t%s\n" % (str(p0), str(p1), str(u), str(m), str(c)))
+        fw.close()
+    sess._finish = False
+    return stored_arr
+
+
+def predict_all_item_mutliprocess(predict_file=predict_file, uid_voc=uid_voc,
+                                  mid_voc=mid_voc,
+                                  cat_voc=cat_voc,
+                                  item_info=item_info,
+                                  reviews_info=reviews_info,
+                                  batch_size=128,
+                                  maxlen=100,
+                                  day="default"):
+    # sample_io
+    if xdl.get_config('model') == 'din':
+        model = Model_DIN(
+            EMBEDDING_DIM, HIDDEN_SIZE, ATTENTION_SIZE)
+    elif xdl.get_config('model') == 'dien':
+        model = Model_DIEN(
+            EMBEDDING_DIM, HIDDEN_SIZE, ATTENTION_SIZE)
+    else:
+        raise Exception('only support din and dien model')
+
+    @xdl.tf_wrapper(is_training=False, gpu_memory_fraction=0.9, device_type="gpu")
+    def tf_test_model(*inputs):
+        with tf.variable_scope("tf_model", reuse=tf.AUTO_REUSE):
+            model.build_tf_net(inputs, False)
+        predict_ops = model.predict_ops()
+        return predict_ops[0], predict_ops[1:]
+
+    eval_sess = xdl.TrainSession()
+    # print("model")
+    saver = xdl.Saver()
+    saver.restore(version="ckpt-................2000")
+
+    num_pool = 32
+    p = Pool(num_pool)
+    file_list = os.listdir(predict_file)
+    abs_file_to_predict = []
+    for f in file_list:
+        if f != "_SUCCESS":
+            abs_file_to_predict.append(os.path.join(predict_file, f))
+
+    process = [
+        p.apply_async(predict_each_core, args=(eval_sess, abs_file, predict_result_file, day, model, uid_voc, mid_voc,
+                                               cat_voc, item_info, reviews_info, maxlen, idx))
+        for idx, abs_file in enumerate(abs_file_to_predict)]
+    p.close()
+    p.join()
+
+
 def predict_all_item(train_file=test_file,
                      test_file=test_file,
                      uid_voc=uid_voc,
@@ -230,38 +303,38 @@ def predict_all_item(train_file=test_file,
     def tf_test_model(*inputs):
         with tf.variable_scope("tf_model", reuse=tf.AUTO_REUSE):
             model.build_tf_net(inputs, False)
-        predict_ops = model.predict_ops()	
+        predict_ops = model.predict_ops()
         return predict_ops[0], predict_ops[1:]
 
     eval_sess = xdl.TrainSession()
-    #print("model")
+    # print("model")
     saver = xdl.Saver()
     saver.restore(version="ckpt-................2000")
-    #print("predict_start")
-    #print("make_SampleIO_DATA")
+    # print("predict_start")
+    # print("make_SampleIO_DATA")
     sample_io = SampleIO(test_file, test_file, uid_voc, mid_voc,
-                         cat_voc, item_info, reviews_info,32, maxlen, EMBEDDING_DIM)
+                         cat_voc, item_info, reviews_info, 32, maxlen, EMBEDDING_DIM)
     # predict
-    #print("data_next")
-    #print("SampleIO_next")
+    # print("data_next")
+    # print("SampleIO_next")
     ids, datas = sample_io.next_predict()
-    #print("data_size",len(ids),len(datas))
+    # print("data_size",len(ids),len(datas))
     predict_ops = tf_test_model(*model.xdl_embedding(datas, EMBEDDING_DIM, *sample_io.get_n()))  # predict_ops中包含有uuid
-    #print("reslen",len(res))
-    #predict_ops=[predict_ops_raw[0],predict_ops_raw[1:]]
-    #idx_ops=[idx_ops_raw[0],idx_ops_raw[1],idx_ops_raw[2]]
-    #print("PredictAndSave")
-    #print("predict_real_start")
-    stored_arr = predict_all_item_model(eval_sess, ids, predict_ops,predict_result_file, day,xdl.get_config('model'))
+    # print("reslen",len(res))
+    # predict_ops=[predict_ops_raw[0],predict_ops_raw[1:]]
+    # idx_ops=[idx_ops_raw[0],idx_ops_raw[1],idx_ops_raw[2]]
+    # print("PredictAndSave")
+    # print("predict_real_start")
+    stored_arr = predict_all_item_model(eval_sess, ids, predict_ops, predict_result_file, day, xdl.get_config('model'))
     cnt = 0
-    #print("predict_finish")
-    #fw = open("%s/predict_result_tag_%s.txt" % (predict_result_file, day), 'a+')
-    #for r in stored_arr:
+    # print("predict_finish")
+    # fw = open("%s/predict_result_tag_%s.txt" % (predict_result_file, day), 'a+')
+    # for r in stored_arr:
     #    fw.write("%s\t%s\t%s\t%s\t%s\n" % (str(r[0]), str(r[1]), str(r[2]), str(r[3]), str(r[4])))
     #    cnt += 1
     #    if cnt < 10:
     #        print(r[0], r[1], r[2], r[3], r[4])
-    #fw.close()
+    # fw.close()
 
 
 if __name__ == '__main__':
@@ -272,18 +345,19 @@ if __name__ == '__main__':
     numpy.random.seed(SEED)
     random.seed(SEED)
 
-#    config = tf.ConfigProto()
-#    config.gpu_options.allow_growth = True
-#    session = tf.Session(config=config)
-    
+    #    config = tf.ConfigProto()
+    #    config.gpu_options.allow_growth = True
+    #    session = tf.Session(config=config)
+
     job_type = xdl.get_config("job_type")
     if job_type == 'train':
         train()
     elif job_type == 'test':
         test()
     elif job_type == "predict":
-        #d = datetime.datetime.now().strftime('%Y-%m-%d')
-	predict_all_item(day=yes_d)
-        #predict(day=d)
+        # d = datetime.datetime.now().strftime('%Y-%m-%d')
+        predict_all_item(day=yes_d)
+        predict_all_item_mutliprocess(day=yes_d)
+        # predict(day=d)
     else:
         print('job type must be train or test, do nothing...')

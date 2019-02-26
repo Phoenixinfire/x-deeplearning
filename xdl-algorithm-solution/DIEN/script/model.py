@@ -86,7 +86,6 @@ def predict_model(sess, predict_ops):
     sess._finish = False
     return stored_arr
 
-
 def predict_all_item_model(sess, idx_ops, predict_ops,predict_result_file,day,model):
     nums = 0
     stored_arr = []
