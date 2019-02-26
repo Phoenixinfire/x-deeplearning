@@ -15,7 +15,7 @@
 # ==============================================================================
 
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] ="3,2,1,0"
+os.environ["CUDA_VISIBLE_DEVICES"] ="0,1,2,3" 
 
 
 import sys
@@ -40,14 +40,18 @@ ATTENTION_SIZE = 18 * 2
 best_auc = 0.0
 
 
-#now_time=datetime.datetime.now()
-#yes_time=now_time+datetime.timedelta(days=-1)
+now_time=datetime.datetime.now()
+yes_time=now_time+datetime.timedelta(days=-1)
+
 #yes_d=yes_time.strftime("%Y-%m-%d")
 
-def get_data_prefix():
-    return xdl.get_config('data_dir')
+yes_d=xdl.get_app_id()
+print(yes_d)
 
-#print(get_data_prefix(yes_d))
+def get_data_prefix():
+    return os.path.join(xdl.get_config('data_dir'),"dt=%s"%(yes_d))
+
+print(get_data_prefix())
 
 
 train_file = os.path.join(get_data_prefix(), "local_train_splitByUser")
@@ -69,8 +73,8 @@ def train(train_file=train_file,
           item_info=item_info,
           reviews_info=reviews_info,
           batch_size=128,
-          maxlen=300,
-          test_iter=500):
+          maxlen=200,
+          test_iter=700):
     if xdl.get_config('model') == 'din':
         model = Model_DIN(
             EMBEDDING_DIM, HIDDEN_SIZE, ATTENTION_SIZE)
@@ -178,7 +182,7 @@ def predict(train_file=predict_file,
         eval_sess = xdl.TrainSession()
         print("model")
         saver = xdl.Saver()
-        saver.restore(version="ckpt-................3000")
+        saver.restore(version="ckpt-................5000")
         print("predict_start")
         if f != "_SUCCESS":
             abs_file = predict_file + "/%s" % (f)
@@ -232,7 +236,7 @@ def predict_all_item(train_file=test_file,
     eval_sess = xdl.TrainSession()
     #print("model")
     saver = xdl.Saver()
-    saver.restore(version="ckpt-................4000")
+    saver.restore(version="ckpt-................5000")
     #print("predict_start")
     #print("make_SampleIO_DATA")
     sample_io = SampleIO(test_file, test_file, uid_voc, mid_voc,
@@ -278,9 +282,8 @@ if __name__ == '__main__':
     elif job_type == 'test':
         test()
     elif job_type == "predict":
-	pass
         #d = datetime.datetime.now().strftime('%Y-%m-%d')
-	#predict_all_item(day=yes_d)
+	predict_all_item(day=yes_d)
         #predict(day=d)
     else:
         print('job type must be train or test, do nothing...')

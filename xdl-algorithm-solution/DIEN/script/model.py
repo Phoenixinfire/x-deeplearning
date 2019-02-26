@@ -251,14 +251,14 @@ class Model(object):
         return y_hat
 
     def build_final_net(self, EMBEDDING_DIM, sample_io, is_train=True):
-        @xdl.tf_wrapper(is_training=True, gpu_memory_fraction=0.8)
+        @xdl.tf_wrapper(is_training=True, gpu_memory_fraction=0.9)
         def tf_train_model(*inputs):
             with tf.variable_scope("tf_model", reuse=tf.AUTO_REUSE):
                 self.build_tf_net(inputs, is_train)
             train_ops = self.train_ops()
             return train_ops[0], train_ops[1:]
 
-        @xdl.tf_wrapper(is_training=False, gpu_memory_fraction=0.8)
+        @xdl.tf_wrapper(is_training=False, gpu_memory_fraction=0.9)
         def tf_test_model(*inputs):
             with tf.variable_scope("tf_model", reuse=tf.AUTO_REUSE):
                 self.build_tf_net(inputs, is_train)
@@ -266,12 +266,12 @@ class Model(object):
             return test_ops[0], test_ops[1:]
 
         if is_train:
-            datas = sample_io.next_train()
+            ids,datas = sample_io.next_train()
             train_ops = tf_train_model(
                 *self.xdl_embedding(datas, EMBEDDING_DIM, *sample_io.get_n()))
             return train_ops
         else:
-            datas = sample_io.next_test()
+            ids,datas = sample_io.next_test()
             test_ops = tf_test_model(
                 *self.xdl_embedding(datas, EMBEDDING_DIM, *sample_io.get_n()))
             return test_ops
@@ -364,14 +364,14 @@ class Model_DIEN(Model):
         return results + datas[7:]
 
     def build_final_net(self, EMBEDDING_DIM, sample_io, is_train=True):
-        @xdl.tf_wrapper(is_training=True, gpu_memory_fraction=0.8)
+        @xdl.tf_wrapper(is_training=True, gpu_memory_fraction=0.9)
         def tf_train_model(*inputs):
             with tf.variable_scope("tf_model", reuse=tf.AUTO_REUSE):
                 self.build_tf_net(inputs, is_train)
             train_ops = self.train_ops()
             return train_ops[0], train_ops[1:]
 
-        @xdl.tf_wrapper(is_training=False, gpu_memory_fraction=0.8)
+        @xdl.tf_wrapper(is_training=False, gpu_memory_fraction=0.9)
         def tf_test_model(*inputs):
             with tf.variable_scope("tf_model", reuse=tf.AUTO_REUSE):
                 self.build_tf_net(inputs, is_train)
@@ -379,12 +379,12 @@ class Model_DIEN(Model):
             return test_ops[0], test_ops[1:]
 
         if is_train:
-            datas = sample_io.next_train()
+            ids,datas = sample_io.next_train()
             train_ops = tf_train_model(
                 *self.xdl_embedding(datas, EMBEDDING_DIM, *sample_io.get_n()))
             return train_ops
         else:
-            datas = sample_io.next_test()
+            ids,datas = sample_io.next_test()
             test_ops = tf_test_model(
                 *self.xdl_embedding(datas, EMBEDDING_DIM, *sample_io.get_n()))
             return test_ops
@@ -441,14 +441,14 @@ class Model_DIN(Model):
         return results + datas[7:]
 
     def build_final_net(self, EMBEDDING_DIM, sample_io, is_train=True):
-        @xdl.tf_wrapper(is_training=True, gpu_memory_fraction=0.8)
+        @xdl.tf_wrapper(is_training=True, gpu_memory_fraction=0.9)
         def tf_train_model(*inputs):
             with tf.variable_scope("tf_model", reuse=tf.AUTO_REUSE):
                 self.build_tf_net(inputs, is_train)
             train_ops = self.train_ops()
             return train_ops[0], train_ops[1:]
 
-        @xdl.tf_wrapper(is_training=False, gpu_memory_fraction=0.8)
+        @xdl.tf_wrapper(is_training=False, gpu_memory_fraction=0.9)
         def tf_test_model(*inputs):
             with tf.variable_scope("tf_model", reuse=tf.AUTO_REUSE):
                 self.build_tf_net(inputs, is_train)
@@ -456,12 +456,12 @@ class Model_DIN(Model):
             return test_ops[0], test_ops[1:]
 
         if is_train:
-            datas = sample_io.next_train()
+            ids,datas = sample_io.next_train()
             train_ops = tf_train_model(
                 *self.xdl_embedding(datas, EMBEDDING_DIM, *sample_io.get_n()))
             return train_ops
         else:
-            datas = sample_io.next_test()
+            ids,datas = sample_io.next_test()
             test_ops = tf_test_model(
                 *self.xdl_embedding(datas, EMBEDDING_DIM, *sample_io.get_n()))
             return test_ops

@@ -31,6 +31,8 @@ parser.add_argument("-cp", "--ckpt_dir", help="checkpoint dir")
 parser.add_argument("-tt", "--task_type", help="task type", default="train")
 parser.add_argument("-ms", "--model_server", help="model server", default="")
 parser.add_argument("-msn", "--model_server_num", help="model server num", default="")
+parser.add_argument("-dt", "--data_date", help="data date", default="")
+
 _BASE_ARGS = parser.parse_args()
 
 def get_task_name():
@@ -45,6 +47,9 @@ def get_task_index():
 
 def get_app_id():
   return _BASE_ARGS.app_id
+
+def get_data_date():
+  return _BASE_ARGS.data_date
 
 def get_zk_addr():
   return _BASE_ARGS.zk_addr
