@@ -144,7 +144,7 @@ def add_variable_inputs(inputs, input_op_names):
     input_op_names.extend([x[1].name for x in var_mapping])
 
 
-def tf_wrapper(is_training=True, init_grad=None, gpu_memory_fraction=0.5, device_type='cpu'):
+def tf_wrapper(is_training=True, init_grad=None, gpu_memory_fraction=0.5, device_type='gpu'):
     """python decorator to adapt a tf-model define function to xdl.
 
     Args:
