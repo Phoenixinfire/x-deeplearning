@@ -16,7 +16,7 @@
 
 import os
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "1,0,2,3"
+os.environ["CUDA_VISIBLE_DEVICES"] = "3,2,1,0"
 
 import sys
 import time
@@ -272,7 +272,7 @@ def predict_all_item_mutliprocess(predict_file=predict_file, uid_voc=uid_voc,
             abs_file_to_predict.append(os.path.join(predict_file, f))
 
     process = [
-        p.apply_async(predict_each_core, args=(eval_sess, abs_file, predict_result_file, day, model, uid_voc, mid_voc,
+        p.apply_async(predict_each_core, args=(eval_sess, abs_file, predict_result_file, day, xdl.get_config('model'), uid_voc, mid_voc,
                                                cat_voc, item_info, reviews_info, maxlen, idx))
         for idx, abs_file in enumerate(abs_file_to_predict)]
     p.close()
@@ -299,7 +299,7 @@ def predict_all_item(train_file=test_file,
     else:
         raise Exception('only support din and dien model')
 
-    @xdl.tf_wrapper(is_training=False, gpu_memory_fraction=0.9)
+    @xdl.tf_wrapper(is_training=False, gpu_memory_fraction=0.9, device_type="gpu")
     def tf_test_model(*inputs):
         with tf.variable_scope("tf_model", reuse=tf.AUTO_REUSE):
             model.build_tf_net(inputs, False)
@@ -309,7 +309,7 @@ def predict_all_item(train_file=test_file,
     eval_sess = xdl.TrainSession()
     # print("model")
     saver = xdl.Saver()
-    saver.restore(version="ckpt-................2000")
+    saver.restore(version="ckpt-................3000")
     # print("predict_start")
     # print("make_SampleIO_DATA")
     sample_io = SampleIO(test_file, test_file, uid_voc, mid_voc,
@@ -357,7 +357,7 @@ if __name__ == '__main__':
     elif job_type == "predict":
         # d = datetime.datetime.now().strftime('%Y-%m-%d')
         predict_all_item(day=yes_d)
-        predict_all_item_mutliprocess(day=yes_d)
+        #predict_all_item_mutliprocess(day=yes_d)
         # predict(day=d)
     else:
         print('job type must be train or test, do nothing...')

@@ -15,7 +15,7 @@
 # ==============================================================================
 
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] ="3,2,1,0"
+os.environ["CUDA_VISIBLE_DEVICES"] ="1,0,2,3"
 
 
 import sys

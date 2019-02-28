@@ -18,7 +18,8 @@ import xdl
 import numpy as np
 from data_iterator import DataIterator
 from xdl.python.lib.error import OutOfRange
-
+import logging
+logger=logging.getLogger(__name__)
 
 class SampleIO(object):
     def __init__(self,
@@ -64,6 +65,7 @@ class SampleIO(object):
 
     def next_predict(self):
         if self.return_neg:
+	    logger.info("sampleio")	
             return self._py_func(self._next_predict)
         else:
             return self._py_func(self._next_predict, sparse_cnt=5)

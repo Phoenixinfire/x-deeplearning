@@ -3,7 +3,7 @@
     "output_dir": "./ckpt_dir_din_20190226_15/",
     "save_interval": 1000
   },
-  "data_dir": "/data/dien_data_20190225_15",
+  "data_dir": "/data/dien_data_20190226_15",
   "seed": 3,
   "job_type": "train",
   "model": "din"

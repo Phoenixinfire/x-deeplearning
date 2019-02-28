@@ -1,6 +1,6 @@
 {
   "checkpoint": {
-    "output_dir": "./ckpt_dir_dien_20190225_15/",
+    "output_dir": "./ckpt_dir_dien_20190226_15/",
     "save_interval": 3000
   },
   "data_dir": "/data/prepare_predict_data/data",

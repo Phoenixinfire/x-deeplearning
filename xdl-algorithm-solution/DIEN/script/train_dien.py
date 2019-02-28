@@ -25,10 +25,13 @@ import random
 import datetime
 import tensorflow as tf
 import numpy
-
+from multiprocessing import Pool
 from model import *
 from utils import *
 from sample_io import SampleIO
+import logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 import xdl
 from xdl.python.training.train_session import QpsMetricsHook, MetricsPrinterHook
@@ -38,6 +41,7 @@ EMBEDDING_DIM = 18
 HIDDEN_SIZE = 18 * 2
 ATTENTION_SIZE = 18 * 2
 best_auc = 0.0
+
 
 
 now_time=datetime.datetime.now()
@@ -206,6 +210,97 @@ def predict(train_file=predict_file,
                     print(r[0], r[1], r[2], r[3])
             fw.close()
 
+def predict_each_core(sess, file_to_predict, predict_result_file, day, model_str, uid_voc, mid_voc,
+                      cat_voc, item_info, reviews_info, maxlen, index):
+    
+    try:
+         # sample_io
+        if xdl.get_config('model') == 'din':
+            model = Model_DIN(
+                EMBEDDING_DIM, HIDDEN_SIZE, ATTENTION_SIZE)
+        elif xdl.get_config('model') == 'dien':
+            model = Model_DIEN(
+                EMBEDDING_DIM, HIDDEN_SIZE, ATTENTION_SIZE)
+        else:
+            raise Exception('only support din and dien model')
+
+       
+	logger.info("input")
+	sample_io = SampleIO(file_to_predict, file_to_predict, uid_voc, mid_voc,
+	                     cat_voc, item_info, reviews_info,1 , maxlen, EMBEDDING_DIM)
+	idx_ops, datas = sample_io.next_predict()  
+	logger.info("data_size=%d=%d"%(len(idx_ops),len(datas)))
+	
+	@xdl.tf_wrapper(is_training=False, gpu_memory_fraction=0.9, device_type="gpu")
+	def tf_test_model(*inputs):
+	    with tf.variable_scope("tf_model", reuse=tf.AUTO_REUSE):
+	        model.build_tf_net(inputs, False)
+	    predict_ops = model.predict_ops()
+	    return predict_ops[0], predict_ops[1:]
+	
+	predict_ops = tf_test_model(*model.xdl_embedding(datas, EMBEDDING_DIM, *sample_io.get_n()))  # predict_ops中包含有uuid
+	logger.info("hahaha")
+	nums = 0
+	stored_arr = []
+	logger.info("hello,xdl")
+	while not sess.should_stop():
+	    logger.info("wearhear")
+	    nums += 1
+
+	    values, ids = sess.run([predict_ops, idx_ops])
+	    logger.info("runsucdess")
+	    uid, mid, cat = ids  # sess.run(idx_ops)
+	    if values is None:
+	        break
+	    prob, target = values
+	    prob_1 = [x[0] for x in prob]
+	    prob_0 = [x[1] for x in prob]
+	    cnt = 0
+	    fw = open("%s/predict_result_tag_%s_%s_%s.txt" % (predict_result_file, day, model_str, index), 'a+')
+	    for p0, p1, u, m, c in zip(prob_0, prob_1, uid, mid, cat):
+		logger.info("%s\t%s\t%s\t%s\t%s\n" % (str(p0), str(p1), str(u), str(m), str(c)))
+	        fw.write("%s\t%s\t%s\t%s\t%s\n" % (str(p0), str(p1), str(u), str(m), str(c)))
+	    fw.close()
+	sess._finish = False
+	return stored_arr
+    except Exception as e:
+	logger.error(str(e))
+
+
+def predict_all_item_mutliprocess(predict_file=predict_file, uid_voc=uid_voc,
+                                  mid_voc=mid_voc,
+                                  cat_voc=cat_voc,
+                                  item_info=item_info,
+                                  reviews_info=reviews_info,
+                                  batch_size=128,
+                                  maxlen=100,
+                                  day="default"):
+    
+
+
+    eval_sess = xdl.TrainSession()
+    # print("model")
+    saver = xdl.Saver()
+    saver.restore(version="ckpt-................2000")
+
+
+    num_pool = 4
+    p = Pool(num_pool)
+    file_list = os.listdir(predict_file)
+    abs_file_to_predict = []
+    for f in file_list:
+        if f != "_SUCCESS":
+            abs_file_to_predict.append(os.path.join(predict_file, f))
+    #print(",".join(abs_file_to_predict))
+    #print(xdl.get_config('model'))
+    process = [
+        p.apply_async(predict_each_core, args=(eval_sess, abs_file, predict_result_file, day, xdl.get_config('model'), uid_voc, mid_voc,
+                                               cat_voc, item_info, reviews_info, maxlen, idx,))
+        for idx, abs_file in enumerate(abs_file_to_predict)]
+    p.close()
+    p.join()
+
+
 def predict_all_item(train_file=test_file,
                      test_file=test_file,
                      uid_voc=uid_voc,
@@ -226,7 +321,7 @@ def predict_all_item(train_file=test_file,
     else:
         raise Exception('only support din and dien model')
 
-    @xdl.tf_wrapper(is_training=False, gpu_memory_fraction=0.9)
+    @xdl.tf_wrapper(is_training=False, gpu_memory_fraction=0.9, device_type="gpu")
     def tf_test_model(*inputs):
         with tf.variable_scope("tf_model", reuse=tf.AUTO_REUSE):
             model.build_tf_net(inputs, False)
@@ -284,6 +379,7 @@ if __name__ == '__main__':
     elif job_type == "predict":
         #d = datetime.datetime.now().strftime('%Y-%m-%d')
 	predict_all_item(day=yes_d)
+	#predict_all_item_mutliprocess(day=yes_d)
         #predict(day=d)
     else:
         print('job type must be train or test, do nothing...')
